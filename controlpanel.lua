@@ -12,6 +12,8 @@ function drawControlPanel()
     love.graphics.print("Thrust", (width - 7*width/40) + 10, 5*height/6-35, 0, 1)
     love.graphics.line((width - 9*width/40) + 10, height/2, (width - 9*width/40), height/2)
     love.graphics.line(width/20, height/2, width/20+10, height/2)
+    love.graphics.print("Sonar [Q]", 10*width/40, 5*height/6 + 10, 0, 1)
+    love.graphics.print("Torpedo [E]", 23*width/40, 5*height/6 + 10, 0, 1)
 end
 
 function drawSpeed(speed)
@@ -47,6 +49,16 @@ local function myStencilFunction()
     love.graphics.circle("fill", width/2, height/2, height/3)
 end
 
+function drawStencil()
+    love.graphics.setColor(0.0, 0.5, 0.0) 
+    love.graphics.stencil(myStencilFunction, "replace", 1)
+    love.graphics.setStencilTest("greater", 0)
+end
+
+function endStencil()
+    love.graphics.setStencilTest()
+end
+
 function dashLine( p1, p2, dash, gap )
     local dy, dx = p2.y - p1.y, p2.x - p1.x
     local an, st = math.atan2( dy, dx ), dash + gap
@@ -63,9 +75,6 @@ function dashLine( p1, p2, dash, gap )
  end
 
 function drawGrid(player)
-    love.graphics.setColor(0.0, 0.5, 0.0) 
-    love.graphics.stencil(myStencilFunction, "replace", 1)
-    love.graphics.setStencilTest("greater", 0)
     local miny = math.floor((player.y + 2000)/1000)*1000
     local minx = math.floor((player.x + 2500)/1000)*1000
     local minyc = (player.y - miny) * height/(8*500) + height/2
@@ -83,7 +92,6 @@ function drawGrid(player)
             dashLine({x=x, y=minyc}, {x=x, y=minyc + height}, 5, 5)
         end
     end
-    love.graphics.setStencilTest()
 end
 
 function drawCompass(rotation)
@@ -100,31 +108,97 @@ function drawCompass(rotation)
     love.graphics.printf("E", width/2 + height/3 - 30, height/2 - 12, 50, "left")
 end
 
-function drawEnemy(enemy, lastKnownEnemySighting, player)
-    -- posx = (player.x - enemy.x)/10 + width/2
-    -- posy = (player.y - enemy.y)/10 + height/2
-    -- if checkOnDisplay(posx, posy) then
-    --     local pulse = math.sin(time*18)/4 + 0.75
-    --     love.graphics.setColor(0.1, 1.0 * pulse, 0.1) 
-    --     love.graphics.circle("fill", posx, posy, height/100 * pulse/2 + height/120)
-    -- end
-    lpx = (player.x - lastKnownEnemySighting.x)/10 + width/2
-    lpy = (player.y - lastKnownEnemySighting.y)/10 + height/2
-    if checkOnDisplay(lpx, lpy) then
-        local pulse = math.cos(time/100)/2 + 0.5
+function drawSonar(enemy, player)
+    if (sonar.active) then
+        duration = time - sonar.time
+        if (duration > 4) then
+            sonar.active = false
+            if (enemy.dead) then 
+                return
+            end
+            posx = (player.x - enemy.x)/10 + width/2
+            posy = (player.y - enemy.y)/10 + height/2
+            if checkOnDisplay(posx, posy) then
+                lastKnownEnemySighting = {x = enemy.x, y = enemy.y, speed = enemy.speed, heading = enemy.heading, time=time}
+            end
+        end
+        love.graphics.setColor(0.0, 1.0, 0.0) 
+        love.graphics.circle("line", width/2, height/2, math.fmod((time - sonar.time)/2, 1) * height/3)
+    end
+end
+
+function drawTorpedo(enemy, player)
+    if (torpedo.active) then
+        duration = time - torpedo.time
+        if (duration > 10) then
+            torpedo.active = false
+        end
+        if (torpedo.exploding) then
+            if time - torpedo.explodingTime < 2 then
+                love.graphics.circle("line", torpedo.x, torpedo.y, (time - torpedo.explodingTime)*height/10)
+            else
+                torpedo.active = false
+            end
+            return
+        end
+        calcx = torpedo.x + math.sin(torpedo.heading) * torpedo.speed * (time - torpedo.time) * 5
+        calcy = torpedo.y + math.cos(torpedo.heading) * torpedo.speed * (time - torpedo.time) * 5
+        posx = (player.x - calcx)/10 + width/2
+        posy = (player.y - calcy)/10 + height/2
+        local dx = calcx - enemy.x
+        local dy = calcy - enemy.y
+        if dx^2 + dy^2 < 40000 then
+            explosionSound:play()
+            torpedo.exploding = true
+            torpedo.explodingTime = time
+            torpedo.x = posx
+            torpedo.y = posy
+            torpedo.speed = 0
+            enemy.dead = true
+            lastKnownEnemySighting = nil
+        end
+        if checkOnDisplay(posx, posy) then
+            love.graphics.setColor(1.0, 0.1, 0.1) 
+            love.graphics.circle("fill", posx, posy, height/150)
+        else 
+            torpedo.active = false
+        end
+    end
+end
+
+function drawEnemy()
+    posx = (player.x - enemy.x)/10 + width/2
+    posy = (player.y - enemy.y)/10 + height/2
+    if checkOnDisplay(posx, posy) and enemy.speed > 6 then
+
+        local pulse = math.sin(time*18)/4 + 0.75
         love.graphics.setColor(0.1, 1.0 * pulse, 0.1) 
-        love.graphics.circle("line", lpx, lpy, height/100 * pulse/2 + height/120)
+        love.graphics.circle("fill", posx, posy, height/100 * pulse/2 + height/120)
+        lastKnownEnemySighting = {x = enemy.x, y = enemy.y, speed = enemy.speed, heading = enemy.heading, time=time}
+
+    elseif (lastKnownEnemySighting ~= nil) then    
+        if (lastKnownEnemySighting.time - time > 15) then
+            return
+        end
+
+        lpx = (player.x - lastKnownEnemySighting.x)/10 + width/2
+        lpy = (player.y - lastKnownEnemySighting.y)/10 + height/2
+        if checkOnDisplay(lpx, lpy) then
+            local pulse = math.cos((time-lastKnownEnemySighting.time)/30)/2 + 0.5
+            love.graphics.setColor(0.1, 1.0 * pulse, 0.1) 
+            love.graphics.circle("line", lpx, lpy, height/100 * pulse/2 + height/120)
+        end
+        calcx = lastKnownEnemySighting.x + math.sin(lastKnownEnemySighting.heading) * lastKnownEnemySighting.speed * (time - lastKnownEnemySighting.time) * 5
+        calcy = lastKnownEnemySighting.y + math.cos(lastKnownEnemySighting.heading) * lastKnownEnemySighting.speed * (time - lastKnownEnemySighting.time) * 5
+        cpx = (player.x - calcx)/10 + width/2
+        cpy = (player.y - calcy)/10 + height/2
+        if checkOnDisplay(cpx, cpy) then
+            local pulse = math.cos((time-lastKnownEnemySighting.time)/15)/2 + 0.5
+            love.graphics.setColor(0.1, 1.0 * pulse, 0.1) 
+            love.graphics.circle("line", cpx, cpy, height/100 * pulse/2 + height/120)
+        end
+        dashLine({x=lpx, y=lpy}, {x=cpx, y=cpy}, 10, 10)
     end
-    calcx = lastKnownEnemySighting.x + math.sin(lastKnownEnemySighting.heading) * lastKnownEnemySighting.speed * (time - lastKnownEnemySighting.time) * 10
-    calcy = lastKnownEnemySighting.y + math.cos(lastKnownEnemySighting.heading) * lastKnownEnemySighting.speed * (time - lastKnownEnemySighting.time) * 10
-    cpx = (player.x - calcx)/10 + width/2
-    cpy = (player.y - calcy)/10 + height/2
-    if checkOnDisplay(cpx, cpy) then
-        local pulse = math.cos(time/100)/2 + 0.5
-        love.graphics.setColor(0.1, 1.0 * pulse, 0.5) 
-        love.graphics.circle("line", cpx, cpy, height/100 * pulse/2 + height/120)
-    end
-    dashLine({x=lpx, y=lpy}, {x=cpx, y=cpy}, 10, 10)
     love.graphics.setColor(0.1, 1.0, 0.1) 
 end
 
