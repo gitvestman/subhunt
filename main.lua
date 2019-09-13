@@ -11,20 +11,21 @@ function love.load()
     time = 0
     player = {x = 0, y = 0, 
             speed = 10, thrust = 10, heading = 0, rudder = 0}
-    enemy = {x = love.math.random() * 1700 - 1000, y = love.math.random() * 1700 + 1500, 
-            speed = 10, thrust = 10, heading = 180, rudder = 0, dead = false}
+    enemy = {x = love.math.random() * 1500 - 750, y = love.math.random() * 500 + 1200, 
+            speed = 10, thrust = 10, heading = 180, rudder = 0, dead = false, strategy = 1, countdown = 0}
     -- lastKnownEnemySighting = {x = enemy.x, y = enemy.y, speed = enemy.speed, heading = enemy.heading, time=time}
     sonar = {active = true, time = time}
     sonarSound:play()
     torpedo = {active = false}
+    displayScale = height/4000
 end
 
 
 function love.update(dt)
     time = time + dt
     framerate = 1/dt
-    depth = 100 + 100 * math.sin(time/20)
-    floor = 200 + 10 * math.cos(time/4)
+    depth = 100 + 20 * math.sin(time/40)
+    floor = 180 + 10 * math.cos(time/10)
 
     checkKeyboard(dt)
     moveSubmarine(dt, player)
@@ -39,16 +40,24 @@ end
 
 function spawnNewEnemy()
     angle = love.math.random() * 360
-    enemy = {x = player.x + math.sin(angle) * 2000, y = player.y + math.cos(angle) * 2000, 
-            speed = 10, thrust = 10, heading = 180-angle, rudder = 0, dead = false}
+    enemy = {x = player.x + math.sin(angle) * 1200, y = player.y + math.cos(angle) * 1200, 
+            speed = 10, thrust = 10, heading = 180-angle, rudder = 0, dead = false, countdown = 5}
+    enemy.strategy = math.floor(love.math.random()*10)    
 end
 
 function enemyAi(dt, enemy, player)
-    if (enemy.thrust > 5) then
-        enemy.thrust = enemy.thrust - dt/2
-        enemy.rudder = 1
+    if bit.band(enemy.strategy, 0x01) then -- stealth
+        if (enemy.thrust > 5) then
+            enemy.thrust = enemy.thrust - dt/2
+        end
     else
-        enemy.rudder = math.sin(time/20)
+        if (enemy.thrust < 20) then
+            enemy.thrust = enemy.thrust + dt/2
+        end
+    end
+    if bit.band(enemy.strategy, 0x01) then -- flee
+        enemyangle = math.atan2(enemy.y - player.y, enemy.x - player.x)
+    else
     end
 end
 
@@ -62,12 +71,11 @@ function love.draw()
     love.graphics.printf(math.floor(enemy.x*10)/10, 30, 40, 100, "left")
     love.graphics.printf("Y", 130, 40, 100, "left")
     love.graphics.printf(math.floor(enemy.y*10)/10, 160, 40, 100, "left")
-    if (lastKnownEnemySighting ~= nil) then
-    love.graphics.printf("X", 10, 80, 100, "left")
-    love.graphics.printf(math.floor(lastKnownEnemySighting.x*10)/10, 30, 80, 100, "left")
-    love.graphics.printf("Y", 130, 80, 100, "left")
-    love.graphics.printf(math.floor(lastKnownEnemySighting.y*10)/10, 160, 80, 100, "left")
-    end
+    enemyangle = math.deg(math.atan2(enemy.x - player.x, enemy.y - player.y))
+    love.graphics.printf("A", 10, 80, 100, "left")
+    love.graphics.printf(math.floor(enemyangle*10)/10, 30, 80, 100, "left")
+    love.graphics.printf("B", 130, 80, 100, "left")
+    love.graphics.printf(math.floor(enemy.heading*10)/10, 160, 80, 100, "left")
     love.graphics.printf(math.floor(framerate*10)/10, 500, 10, 100, "left")
     drawControlPanel()
     drawSpeed(player.speed)
@@ -87,19 +95,20 @@ function love.draw()
     -- drawEnemy(time/19, 100 * math.cos(time/3) + 2*width/3, 100 * math.cos(time/4) + 2*height/3)
 end
 
+
 function moveSubmarine(dt, submarine)
-    if (submarine.speed < submarine.thrust) and submarine.thrust > 0 then
+    if (math.abs(submarine.speed) < math.abs(submarine.thrust)) then
         submarine.speed = submarine.speed + (submarine.thrust-submarine.speed) * dt * 0.1
     end
-    if (submarine.speed > submarine.thrust) and submarine.thrust < 0 then
-        submarine.speed = submarine.speed - (submarine.speed-submarine.thrust) * dt * 0.1
+    -- if (submarine.speed > submarine.thrust) and submarine.thrust < 0 then
+    --     submarine.speed = submarine.speed - (submarine.speed-submarine.thrust) * dt * 0.1
+    -- end
+    if (math.abs(submarine.speed) > math.abs(submarine.thrust)) then
+        submarine.speed = submarine.speed * (1 - 0.05 * dt)
     end
-    if (submarine.speed > submarine.thrust) and submarine.thrust > 0 then
-        submarine.speed = submarine.speed - (submarine.speed - submarine.thrust) * submarine.speed * 0.1 * dt
-    end
-    if (submarine.speed < submarine.thrust) and submarine.thrust < 0 then
-        submarine.speed = submarine.speed + (submarine.speed - submarine.thrust) * submarine.speed * 0.1 * dt
-    end
+    -- if (submarine.speed < submarine.thrust) and submarine.thrust < 0 then
+    --     submarine.speed = submarine.speed + (submarine.speed - submarine.thrust) * submarine.speed * 0.1 * dt
+    -- end
 
     submarine.x = submarine.x + math.sin(submarine.heading) * submarine.speed * dt * 5
     submarine.y = submarine.y + math.cos(submarine.heading) * submarine.speed * dt * 5
