@@ -25,7 +25,14 @@ function drawControlPanel()
     love.graphics.line((width - 9*width/40) + 10, height/2, (width - 9*width/40), height/2)
     love.graphics.line(width/20, height/2, width/20+10, height/2)
     love.graphics.print("Sonar [Q]", 10*width/40, 5*height/6 + 10, 0, 1)
-    love.graphics.print("Torpedo [E]", 24*width/40, 5*height/6 + 10, 0, 1)
+    if (player.torpedoloading > 0) then
+        love.graphics.setColor(0.1, 0.7, 0.1) 
+        love.graphics.print("Torpedo [E]", 24*width/40, 5*height/6 + 10, 0, 1)
+        love.graphics.setColor(0.1, 1.0, 0.1) 
+        love.graphics.line(24*width/40, 5*height/6 + 40, 24*width/40 + 0.5*width/40*(10 - player.torpedoloading), 5*height/6 + 40)
+    else
+        love.graphics.print("Torpedo [E]", 24*width/40, 5*height/6 + 10, 0, 1)
+    end
 end
 
 function drawSpeed(speed)
@@ -33,7 +40,7 @@ function drawSpeed(speed)
 end
 
 function drawThrust(thrust)
-    drawMeter(thrust, thrust - 40, thrust + 40, 5, (width - 7*width/40) - 15, "right")
+    drawMeter(thrust, thrust - 40, thrust + 40, 5, (width - 6*width/40) - 15, "right")
 end
 
 function drawDepth(depth)
@@ -41,11 +48,16 @@ function drawDepth(depth)
 end
 
 function drawFloor(depth, floor)
-    drawMeter(floor - depth, 0, 100, 10, 4*width/40 - 10 , "right")
+    drawMeter(floor - depth, 0, 100, 10, 5*width/40 - 10 , "right")
 end
 
 function drawPlayer()
-    love.graphics.ellipse("fill", width/2, height/2, height/120, height/80)
+    if (player.dead) then
+        love.graphics.line(width/2-10, height/2-10, width/2+10, height/2+10)
+        love.graphics.line(width/2-10, height/2+10, width/2+10, height/2-10)
+    else
+        love.graphics.ellipse("fill", width/2, height/2, height/150, height/80)
+    end
 end
 
 function drawMeter(value, min, max, step, xpos, align)
@@ -61,13 +73,18 @@ local function myStencilFunction()
     love.graphics.circle("fill", width/2, height/2, height/3)
 end
 
-function drawStencil()
-    love.graphics.setColor(0.0, 0.5, 0.0) 
+function drawStencil(rotation)
     love.graphics.stencil(myStencilFunction, "replace", 1)
     love.graphics.setStencilTest("greater", 0)
+    love.graphics.translate(width/2, height/2)
+    love.graphics.rotate(math.rad(rotation))
+    love.graphics.translate(-width/2, -height/2)
 end
 
-function endStencil()
+function endStencil(rotation)
+    love.graphics.translate(width/2, height/2)
+    love.graphics.rotate(math.rad(-rotation))
+    love.graphics.translate(-width/2, -height/2)
     love.graphics.setStencilTest()
 end
 
@@ -87,6 +104,7 @@ function dashLine( p1, p2, dash, gap )
  end
 
 function drawGrid(player)
+    love.graphics.setColor(0.0, 0.5, 0.0) 
     local miny = math.floor((player.y + 2500)/1000)*1000
     local minx = math.floor((player.x + 2500)/1000)*1000
     local minyc = (player.y - miny) * displayScale + height/2
@@ -104,12 +122,13 @@ function drawGrid(player)
             dashLine({x=x, y=minyc}, {x=x, y=minyc + height}, 5, 5)
         end
     end
+    love.graphics.setColor(0.1, 1.0, 0.1) 
 end
 
 function drawCompass(rotation)
-    love.graphics.translate(width/2, height/2)
-    love.graphics.rotate(rotation)
-    love.graphics.translate(-width/2, -height/2)
+    -- love.graphics.translate(width/2, height/2)
+    -- love.graphics.rotate(math.rad(rotation))
+    -- love.graphics.translate(-width/2, -height/2)
     love.graphics.line(width/2, height/6, width/2, height/6+10)     
     love.graphics.line(width/2, 5*height/6, width/2, 5*height/6-10)     
     love.graphics.line(width/2 - height/3, height/2, width/2 - height/3 + 10, height/2)     
@@ -128,6 +147,8 @@ function drawSonar(enemy, player)
             if (enemy.dead) then 
                 return
             end
+            local posx = (player.x - enemy.x) * displayScale + width/2	
+            local posy = (player.y - enemy.y) * displayScale + height/2
             if checkOnDisplay(posx, posy) then
                 lastKnownEnemySighting = {x = enemy.x, y = enemy.y, speed = enemy.speed, heading = enemy.heading, time=time}
             end
@@ -137,41 +158,51 @@ function drawSonar(enemy, player)
     end
 end
 
-function drawTorpedo(enemy, player)
-    if (torpedo.active) then
-        duration = time - torpedo.time
-        if (duration > 10) then
-            torpedo.active = false
+function drawTorpedo(submarine, target)
+    for i=#submarine.torpedos,1,-1 do
+        local torpedo = submarine.torpedos[i]
+        if (time - torpedo.time > 10) then
+            table.remove(submarine.torpedos, i)
+            return
         end
+
         if (torpedo.exploding) then
             if time - torpedo.explodingTime < 2 then
+                love.graphics.setColor(0.7, 0.3, 0.1) 
                 love.graphics.circle("line", torpedo.x, torpedo.y, (time - torpedo.explodingTime)*height/10)
+                love.graphics.setColor(0.1, 1.0, 0.1) 
             else
-                torpedo.active = false
+                table.remove(submarine.torpedos, i)
             end
             return
         end
-        calcx = torpedo.x + math.sin(torpedo.heading) * torpedo.speed * (time - torpedo.time) * 5
-        calcy = torpedo.y + math.cos(torpedo.heading) * torpedo.speed * (time - torpedo.time) * 5
+
+        calcx = torpedo.x + math.sin(math.rad(torpedo.heading)) * torpedo.speed * (time - torpedo.time) * 5
+        calcy = torpedo.y + math.cos(math.rad(torpedo.heading)) * torpedo.speed * (time - torpedo.time) * 5
         posx = (player.x - calcx) * displayScale + width/2
         posy = (player.y - calcy) * displayScale + height/2
-        local dx = calcx - enemy.x
-        local dy = calcy - enemy.y
-        if dx^2 + dy^2 < 20000 then
+        local dx = calcx - target.x
+        local dy = calcy - target.y
+        if dx^2 + dy^2 < 6400 then
             explosionSound:play()
             torpedo.exploding = true
             torpedo.explodingTime = time
             torpedo.x = posx
             torpedo.y = posy
             torpedo.speed = 0
-            enemy.dead = true
+            target.dead = true
+            target.countdown = 5
+            if (target == enemy) then
+                score = score + 1
+            end
             lastKnownEnemySighting = nil
         end
         if checkOnDisplay(posx, posy) then
-            love.graphics.setColor(1.0, 0.1, 0.1) 
+            love.graphics.setColor(0.7, 0.3, 0.1) 
             love.graphics.circle("fill", posx, posy, height/150)
+            love.graphics.setColor(0.1, 1.0, 0.1) 
         else 
-            torpedo.active = false
+            table.remove(submarine.torpedos, i)
         end
     end
 end
@@ -186,6 +217,9 @@ function drawDot(mode, x, y, r)
 end
 
 function drawEnemy()
+    if (enemy.dead) then
+        return 
+    end
     local pulse = math.sin(time*18)/4 + 0.75
     love.graphics.setColor(0.1, 1.0 * pulse, 0.1) 
     if enemy.thrust > 6 then
@@ -203,8 +237,8 @@ function drawEnemy()
         love.graphics.setColor(0.1, 1.0 * pulse, 0.1) 
         drawDot("line", lastKnownEnemySighting.x, lastKnownEnemySighting.y, height/60)
 
-        calcx = lastKnownEnemySighting.x + math.sin(lastKnownEnemySighting.heading) * lastKnownEnemySighting.speed * (time - lastKnownEnemySighting.time) * 5
-        calcy = lastKnownEnemySighting.y + math.cos(lastKnownEnemySighting.heading) * lastKnownEnemySighting.speed * (time - lastKnownEnemySighting.time) * 5
+        calcx = lastKnownEnemySighting.x + math.sin(math.rad(lastKnownEnemySighting.heading)) * lastKnownEnemySighting.speed * (time - lastKnownEnemySighting.time) * 5
+        calcy = lastKnownEnemySighting.y + math.cos(math.rad(lastKnownEnemySighting.heading)) * lastKnownEnemySighting.speed * (time - lastKnownEnemySighting.time) * 5
 
         pulse = math.cos((time-lastKnownEnemySighting.time)/15)/4 + 0.75
         love.graphics.setColor(0.1, 1.0 * pulse, 0.1) 
