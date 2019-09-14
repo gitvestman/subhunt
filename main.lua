@@ -8,6 +8,9 @@ function love.load()
     sonarSound = love.audio.newSource("12677__peter-gross__sonar-pings.ogg", "static")
     torpedoSound = love.audio.newSource("327990__bymax__processed-swish-swoosh-whoosh.ogg", "static")
     explosionSound = love.audio.newSource("147873__zesoundresearchinc__depthbomb-04.ogg", "static")
+    propellerSound = love.audio.newSource("260813__iccleste__echo-propeller.ogg", "static")
+    propellerSound:setLooping(true)
+    propellerSound:play()
     time = 0
     score = 0
     player = {x = 0, y = 0, 
@@ -15,8 +18,9 @@ function love.load()
             torpedoloading = 0, torpedos = {} }
     enemy = {x = love.math.random() * 1500 - 750, y = love.math.random() * 500 + 1200, 
             speed = 10, thrust = 10, heading = 180, rudder = 0, dead = false, strategy = 1, countdown = 0, 
-            torpedoloading = 0, torpedos = {} }
-    -- lastKnownEnemySighting = {x = enemy.x, y = enemy.y, speed = enemy.speed, heading = enemy.heading, time=time}
+            torpedoloading = 0, torpedos = {}}
+    explosions = {}
+    player.lastKnown = {x = player.x, y = player.y, speed = player.speed, heading = player.heading, time=time}
     sonar = {active = true, time = time}
     sonarSound:play()
     displayScale = height/4000
@@ -26,8 +30,8 @@ end
 function love.update(dt)
     time = time + dt
     framerate = 1/dt
-    depth = 100 + 20 * math.sin(time*player.speed/200)
-    floor = 180 + 10 * math.cos(time*player.speed/50)
+    depth = 100 + 20 * math.sin(time*player.speed/500)
+    floor = 180 + 10 * math.cos(time*player.speed/100)
 
     checkKeyboard(dt)
     if (enemy.dead) then
@@ -47,6 +51,8 @@ function love.update(dt)
         moveSubmarine(dt, player)
         moveSubmarine(dt, enemy)
         enemyAi(dt, enemy, player)
+        propellerSound:setPitch(math.abs(player.thrust * 0.05) + 0.5)
+        propellerSound:setVolume(math.max(math.abs(player.thrust * 0.05) - 0.25, 0))
     end
 end
 
@@ -62,23 +68,39 @@ function spawnNewEnemy()
 end
 
 function enemyAi(dt, enemy, player)
-    enemydistance = (enemy.x - player.x)^2 + (enemy.y - player.y)^2
-    enemyangle = math.deg(math.atan2(enemy.x - player.x, enemy.y - player.y))
-    differential = math.mod(enemyangle - enemy.heading - 180, 360)
+    if (enemy.dead) then
+        return
+    end
+    local calcx = player.lastKnown.x + math.sin(math.rad(player.lastKnown.heading)) * player.lastKnown.speed * (time - player.lastKnown.time) * 5
+    local calcy = player.lastKnown.y + math.cos(math.rad(player.lastKnown.heading)) * player.lastKnown.speed * (time - player.lastKnown.time) * 5
+    local enemydistance = math.sqrt((enemy.x - calcx)^2 + (enemy.y - calcy)^2)
+    local enemyangle = math.deg(math.atan2(enemy.x - calcx, enemy.y - calcy))
+    local enemyhitangle = math.deg(math.atan2(100, enemydistance))
+    local differential = math.mod(enemyangle - enemy.heading - 180, 360)
 
-    if bit.band(enemy.strategy, 0x01) and enemydistance < 1300^2 then -- stealth
+    if enemydistance < 50 then
+        createExplosion(player.x, player.y)
+        createExplosion(enemy.x, enemy.y)
+        enemy.dead = true
+        player.dead = true
+        player.countdown = 5
+        enemy.countdown = 5
+    end
+
+    if math.abs(differential) < enemyhitangle and enemy.torpedoloading <= 0 then
+        fireTorpedo(enemy)
+    end
+
+    if bit.band(enemy.strategy, 0x01) and enemydistance < 1300 then -- stealth
         if (enemy.thrust > 5) then
             enemy.thrust = enemy.thrust - dt/2
         end
-    else    -- speed
+    else                            -- speed
         if (enemy.thrust < 20) then
             enemy.thrust = enemy.thrust + dt/2
         end
     end
-    if math.abs(differential) < 5 and enemy.torpedoloading <= 0 then
-        fireTorpedo(enemy)
-    end
-    if bit.band(enemy.strategy, 0x02) and enemydistance < 1300^2 then -- flee
+    if bit.band(enemy.strategy, 0x02) and enemydistance < 1300 and enemydistance > 300 and math.abs(differential) < enemyhitangle + 30  then -- flee
         if (differential > 0) then 
             enemy.rudder = 1
         else
@@ -96,6 +118,7 @@ end
 
 function fireTorpedo(submarine)    
     torpedo = {x = submarine.x, y = submarine.y, heading = submarine.heading, speed = 60, time = time}
+    submarine.lastKnown = {x = submarine.x, y = submarine.y, speed = submarine.speed, heading = submarine.heading, time=time}
     submarine.torpedos[#submarine.torpedos + 1] = torpedo
     submarine.torpedoloading = 10
     torpedoSound:play()
@@ -110,13 +133,16 @@ function love.draw()
     -- love.graphics.printf("X", 10, 40, 100, "left")
     -- love.graphics.printf(math.floor(enemy.x*10)/10, 30, 40, 100, "left")
     -- love.graphics.printf("Y", 130, 40, 100, "left")
+    local enemydistance = math.sqrt((enemy.x - player.x)^2 + (enemy.y - player.x)^2)
+    local enemyhitangle = math.deg(math.atan2(100, enemydistance))
+
     -- love.graphics.printf(math.floor(enemy.y*10)/10, 160, 40, 100, "left")
     -- enemyangle = math.deg(math.atan2(enemy.x - player.x, enemy.y - player.y))
     -- differential = math.mod(enemyangle - enemy.heading - 180, 360)
-    -- love.graphics.printf("A", 10, 80, 100, "left")
-    -- love.graphics.printf(math.floor(enemyangle*10)/10, 30, 80, 100, "left")
-    -- love.graphics.printf("B", 130, 80, 100, "left")
-    -- love.graphics.printf(math.floor(enemy.heading*10)/10, 160, 80, 100, "left")
+    love.graphics.printf("A", 10, 80, 100, "left")
+    love.graphics.printf(math.floor(enemydistance*10)/10, 30, 80, 100, "left")
+    love.graphics.printf("B", 130, 80, 100, "left")
+    love.graphics.printf(math.floor(enemyhitangle*10)/10, 160, 80, 100, "left")
     -- love.graphics.printf("C", 260, 80, 100, "left")
     -- love.graphics.printf(math.floor(differential*10)/10, 290, 80, 100, "left")
     -- love.graphics.printf(math.floor(framerate*10)/10, 500, 10, 100, "left")
@@ -136,6 +162,7 @@ function love.draw()
         drawSonar(enemy, player)
         drawTorpedo(player, enemy)
         drawTorpedo(enemy, player)
+        drawExplosions()
     endStencil(player.heading)
     if (player.dead) then
         love.graphics.setFont(mainFont)
