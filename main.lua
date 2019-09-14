@@ -6,8 +6,8 @@ function love.load()
     width = love.graphics.getWidth()
     height = love.graphics.getHeight()
     sonarSound = love.audio.newSource("12677__peter-gross__sonar-pings.ogg", "static")
-    torpedoSound = love.audio.newSource("327990__bymax__processed-swish-swoosh-whoosh.wav", "static")
-    explosionSound = love.audio.newSource("147873__zesoundresearchinc__depthbomb-04.wav", "static")
+    torpedoSound = love.audio.newSource("327990__bymax__processed-swish-swoosh-whoosh.ogg", "static")
+    explosionSound = love.audio.newSource("147873__zesoundresearchinc__depthbomb-04.ogg", "static")
     time = 0
     score = 0
     player = {x = 0, y = 0, 
