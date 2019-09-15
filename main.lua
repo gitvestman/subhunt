@@ -1,6 +1,7 @@
 require "controlpanel"
 
 function love.load()
+    math.randomseed(1337)
     mainFont = love.graphics.newFont(36)
     smallFont = love.graphics.newFont(24)
     width = love.graphics.getWidth()
@@ -13,21 +14,39 @@ function love.load()
     propellerSound:play()
     time = 0
     score = 0
+    kills = 0
+    level = 0
+    displayScale = height/4000
     player = {x = 0, y = 0, 
             speed = 10, thrust = 10, heading = 0, rudder = 0, 
             torpedoloading = 0, torpedos = {} }
     enemy = {x = love.math.random() * 1500 - 750, y = love.math.random() * 500 + 1200, 
             speed = 10, thrust = 10, heading = 180, rudder = 0, dead = false, strategy = 1, countdown = 0, 
-            torpedoloading = 0, torpedos = {}}
+            torpedoloading = 0, torpedos = {}, time = time}
     explosions = {}
     player.lastKnown = {x = player.x, y = player.y, speed = player.speed, heading = player.heading, time=time}
     sonar = {active = false, time = time}
     -- sonarSound:play()
     map = love.graphics.newImage("World.jpg")
+    targets = {{name = "Baltic Sea: Search and destroy", x = 645, y = 130},
+        {name = "South China Sea: Search and destroy", x = 1030, y = 330},
+        {name = "North Sea: Search and destroy", x = 580, y = 110},
+        {name = "Persian Gulf: Search and destroy", x = 730, y = 300},
+        {name = "Sulu Sea: Search and destroy", x = 1060, y = 360},
+        {name = "Gulf of Mexico: Search and destroy", x = 240, y = 280}}
     showMap = true
-    displayScale = height/4000
 end
 
+function newLevel()
+    level = level + 1
+    player = {x = 0, y = 0, 
+            speed = 10, thrust = 10, heading = 0, rudder = 0, 
+            torpedoloading = 0, torpedos = {} }
+    player.lastKnown = {x = player.x, y = player.y, speed = player.speed, heading = player.heading, time=time}
+    showMap = true
+    kills = 0
+    spawnNewEnemy()
+end
 
 function love.update(dt)
     time = time + dt
@@ -45,7 +64,11 @@ function love.update(dt)
         if enemy.countdown > 0 then
             enemy.countdown = enemy.countdown - dt
         else
-            spawnNewEnemy()
+            if (kills >= level) then 
+                newLevel()
+            else
+                spawnNewEnemy()
+            end
         end
     end
     if (player.dead) then
@@ -67,10 +90,10 @@ function GameOver()
 end
 
 function spawnNewEnemy()
-    angle = love.math.random() * 360
+    angle = love.math.random() * 180 - 90 + player.heading
     enemy = {x = player.x + math.sin(math.rad(angle)) * 1200, y = player.y + math.cos(math.rad(angle)) * 1200, 
             speed = 10, thrust = 10, heading = 180-angle, rudder = 0, dead = false, countdown = 5, 
-            torpedoloading = 0, torpedos = {}}
+            torpedoloading = 0, torpedos = {}, time = time}
     enemy.strategy = math.floor(love.math.random()*4)    
 end
 
@@ -82,7 +105,7 @@ function enemyAi(dt, enemy, player)
     local calcy = player.lastKnown.y + math.cos(math.rad(player.lastKnown.heading)) * player.lastKnown.speed * (time - player.lastKnown.time) * 5
     local enemydistance = math.sqrt((enemy.x - calcx)^2 + (enemy.y - calcy)^2)
     local enemyangle = math.deg(math.atan2(enemy.x - calcx, enemy.y - calcy))
-    local enemyhitangle = math.deg(math.atan2(100, enemydistance))
+    local enemyhitangle = math.deg(math.atan2(100, enemydistance)) + math.max(12 - level*2, 0)
     local differential = math.mod(enemyangle - enemy.heading - 180, 360)
 
     if enemydistance < 50 then
@@ -94,7 +117,7 @@ function enemyAi(dt, enemy, player)
         enemy.countdown = 5
     end
 
-    if math.abs(differential) < enemyhitangle and enemy.torpedoloading <= 0 then
+    if math.abs(differential) < enemyhitangle and enemy.torpedoloading <= 0 and level > 1 and math.random() < level * 0.001 then
         fireTorpedo(enemy)
     end
 
@@ -124,10 +147,10 @@ function enemyAi(dt, enemy, player)
 end
 
 function fireTorpedo(submarine)    
-    torpedo = {x = submarine.x, y = submarine.y, heading = submarine.heading, speed = 60, time = time}
+    torpedo = {x = submarine.x, y = submarine.y, heading = submarine.heading, speed = 50, time = time}
     submarine.lastKnown = {x = submarine.x, y = submarine.y, speed = submarine.speed, heading = submarine.heading, time=time}
     submarine.torpedos[#submarine.torpedos + 1] = torpedo
-    submarine.torpedoloading = 10
+    submarine.torpedoloading = 6
     torpedoSound:play()
 end
 
@@ -141,12 +164,18 @@ function drawMap()
     love.graphics.setFont(mainFont)
     love.graphics.printf("MISSION:", 3*width/8, height/8+10, 2*width/8, "center")
     love.graphics.setFont(smallFont)
-    love.graphics.printf("Baltic Sea: Search and destroy", 2*width/8, height/8+50, 4*width/8, "center")
-    local pulse = math.sin(time*10)/4 + 0.75
-    love.graphics.setColor(0.1, 1.0*pulse, 0.1) 
-    love.graphics.setLineWidth(4)
-    love.graphics.line(4*width/8-10, 3*height/8-20, 4*width/8+10, 3*height/8)
-    love.graphics.line(4*width/8-10, 3*height/8, 4*width/8+10, 3*height/8-20)
+    local target = targets[math.mod(level, #targets) + 1]
+    love.graphics.printf(target.name, 2*width/8, height/8+50, 4*width/8, "center")
+    local pulse = math.sin(time*5)/4 +0.75
+    local colorpulse = math.sin(time*20)/4 +0.75
+    love.graphics.setColor(0.1, 1.0*colorpulse, 0.1) 
+    love.graphics.setLineWidth(3)
+    local posx = target.x * scale + width/8
+    local posy = target.y * scale + height/4
+    love.graphics.line(posx-10*pulse, posy, posx-18*pulse-10, posy)
+    love.graphics.line(posx+10*pulse, posy, posx+18*pulse+10, posy)
+    love.graphics.line(posx, posy+10*pulse, posx, posy+18*pulse + 10)
+    love.graphics.line(posx, posy-10*pulse, posx, posy-18*pulse-10)
     love.graphics.setLineWidth(1)
     love.graphics.setColor(0.1, 1.0, 0.1) 
 end
@@ -203,6 +232,9 @@ function love.draw()
     -- drawEnemy(time/19, 100 * math.cos(time/3) + 2*width/3, 100 * math.cos(time/4) + 2*height/3)
 end
 
+function math.sign(x)
+	return (x >= 0) and 1 or -1
+end
 
 function moveSubmarine(dt, submarine)    
     if (math.abs(submarine.speed) < math.abs(submarine.thrust)) then
@@ -214,7 +246,7 @@ function moveSubmarine(dt, submarine)
 
     submarine.x = submarine.x + math.sin(math.rad(submarine.heading)) * submarine.speed * dt * 5
     submarine.y = submarine.y + math.cos(math.rad(submarine.heading)) * submarine.speed * dt * 5
-    submarine.heading = submarine.heading + math.min(submarine.speed * submarine.rudder * dt * 0.7, 1);
+    submarine.heading = submarine.heading + (math.min(submarine.speed,15) + 2*math.sign(submarine.speed)) * submarine.rudder * dt * 0.7;
 
     if (submarine.torpedoloading > 0) then
         submarine.torpedoloading = submarine.torpedoloading - dt
@@ -222,7 +254,7 @@ function moveSubmarine(dt, submarine)
 end
 
 function checkKeyboard(dt)
-    if (showMap and love.keyboard.isDown("space", "return")) then
+    if (showMap and love.keyboard.isDown("space", "return")) and time > 1 then
         showMap = false;
         return
     end

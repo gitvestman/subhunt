@@ -31,7 +31,9 @@ function drawControlPanel()
         love.graphics.setColor(0.1, 0.7, 0.1) 
         love.graphics.print("Torpedo [E]", 24.5*width/40, 5*height/6, 0, 1)
         love.graphics.setColor(0.1, 1.0, 0.1) 
-        love.graphics.line(24.5*width/40, 5*height/6 + 30, 24*width/40 + 0.5*width/40*(10 - player.torpedoloading), 5*height/6 + 30)
+        love.graphics.setLineWidth(2)
+        love.graphics.line(24.5*width/40, 5*height/6 + 30, 24.5*width/40 + width/40*(6 - player.torpedoloading), 5*height/6 + 30)
+        love.graphics.setLineWidth(1)
     else
         love.graphics.print("Torpedo [E]", 24.5*width/40, 5*height/6, 0, 1)
     end
@@ -231,7 +233,8 @@ function drawTorpedo(submarine, target)
             target.dead = true
             target.countdown = 5
             if (target == enemy) then
-                score = score + 1
+                score = score + 100 + math.ceil(5 * math.max(15 - time - enemy.time, 0))
+                kills = kills + 1
             end
             enemy.lastKnown = nil
         end
