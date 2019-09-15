@@ -21,8 +21,10 @@ function love.load()
             torpedoloading = 0, torpedos = {}}
     explosions = {}
     player.lastKnown = {x = player.x, y = player.y, speed = player.speed, heading = player.heading, time=time}
-    sonar = {active = true, time = time}
-    sonarSound:play()
+    sonar = {active = false, time = time}
+    -- sonarSound:play()
+    map = love.graphics.newImage("World.jpg")
+    showMap = true
     displayScale = height/4000
 end
 
@@ -31,9 +33,14 @@ function love.update(dt)
     time = time + dt
     framerate = 1/dt
     depth = 100 + 20 * math.sin(time*player.speed/500)
-    floor = 180 + 10 * math.cos(time*player.speed/100)
+    floor = 180 + 10 * math.cos(time*player.speed/100)    
 
     checkKeyboard(dt)
+
+    if (showMap) then
+        return
+    end
+
     if (enemy.dead) then
         if enemy.countdown > 0 then
             enemy.countdown = enemy.countdown - dt
@@ -124,6 +131,25 @@ function fireTorpedo(submarine)
     torpedoSound:play()
 end
 
+function drawMap()
+    local scale = width/map:getWidth() * 3/4
+    love.graphics.setColor(0.1, 0.3, 0.1) 
+    love.graphics.rectangle("fill", width/8, height/8, 6*width/8, 3*height/4)
+    love.graphics.setColor(0.1, 1.0, 0.1) 
+    love.graphics.rectangle("line", width/8, height/8, 6*width/8, 3*height/4)
+    love.graphics.draw(map, width/8, height/4, 0, scale)
+    love.graphics.setFont(mainFont)
+    love.graphics.printf("MISSION:", 3*width/8, height/8+10, 2*width/8, "center")
+    love.graphics.setFont(smallFont)
+    love.graphics.printf("Baltic Sea: Search and destroy", 2*width/8, height/8+50, 4*width/8, "center")
+    local pulse = math.sin(time*10)/4 + 0.75
+    love.graphics.setColor(0.1, 1.0*pulse, 0.1) 
+    love.graphics.setLineWidth(4)
+    love.graphics.line(4*width/8-10, 3*height/8-20, 4*width/8+10, 3*height/8)
+    love.graphics.line(4*width/8-10, 3*height/8, 4*width/8+10, 3*height/8-20)
+    love.graphics.setLineWidth(1)
+    love.graphics.setColor(0.1, 1.0, 0.1) 
+end
 
 function love.draw()
     -- love.graphics.printf("X", 10, 10, 100, "left")
@@ -170,6 +196,9 @@ function love.draw()
         love.graphics.setFont(smallFont)
         love.graphics.printf("Press Enter to start over", width/2 - 150, 1*height/3 + 50, 300, "center")
     end
+    if (showMap) then
+        drawMap()
+    end
     -- drawEnemy(time/19, 100 * math.sin(time/4) + width/3, 100 * math.cos(time/4) + height/3)
     -- drawEnemy(time/19, 100 * math.cos(time/3) + 2*width/3, 100 * math.cos(time/4) + 2*height/3)
 end
@@ -193,6 +222,10 @@ function moveSubmarine(dt, submarine)
 end
 
 function checkKeyboard(dt)
+    if (showMap and love.keyboard.isDown("space", "return")) then
+        showMap = false;
+        return
+    end
     if love.keyboard.isDown("up", "w") and player.thrust < 20 then
         player.thrust = player.thrust + dt * 3
         fullstop = false
