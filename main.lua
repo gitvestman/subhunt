@@ -1,7 +1,8 @@
 require "controlpanel"
+require "highscore"
 
 function love.load()
-    math.randomseed(1337)
+    love.math.setRandomSeed(1337)
     mainFont = love.graphics.newFont(36)
     smallFont = love.graphics.newFont(24)
     width = love.graphics.getWidth()
@@ -12,6 +13,7 @@ function love.load()
     propellerSound = love.audio.newSource("260813__iccleste__echo-propeller.ogg", "static")
     propellerSound:setLooping(true)
     propellerSound:play()
+    propellerSound:setVolume(0.5)
     time = 0
     score = 0
     kills = 0
@@ -35,6 +37,10 @@ function love.load()
         {name = "Sulu Sea: Search and destroy", x = 1060, y = 360},
         {name = "Gulf of Mexico: Search and destroy", x = 240, y = 280}}
     showMap = true
+
+    highscore.load()
+
+    love.keyboard.setKeyRepeat(false)
 end
 
 function newLevel()
@@ -52,8 +58,11 @@ function love.update(dt)
     time = time + dt
     framerate = 1/dt
     depth = 100 + 20 * math.sin(time*player.speed/500)
-    floor = 180 + 10 * math.cos(time*player.speed/100)    
+    floor = 180 + 10 * math.cos(time*player.speed/200)    
 
+    if highscore.update(dt) then
+        return 
+    end
     checkKeyboard(dt)
 
     if (showMap) then
@@ -72,6 +81,7 @@ function love.update(dt)
         end
     end
     if (player.dead) then
+        propellerSound:stop()
         if player.countdown > 0 then
             player.countdown = player.countdown - dt
         else
@@ -86,7 +96,36 @@ function love.update(dt)
     end
 end
 
+-- function love.textinput( text )
+--     highscore.textinput(text)
+-- end
+
+function love.keypressed(key)
+    if highscore.keypressed(key) then 
+        return
+    end
+    if showMap and (key == "space" or key == "return") and time > 1 then
+        showMap = false;
+        return
+    end
+    if key == 'q' and not sonar.active then
+        sonar = {active = true, time = time}
+        sonarSound:play()
+    end
+    if (key == 'e' or key == 'space') and player.torpedoloading <= 0 then
+        fireTorpedo(player)
+    end
+    if key == 'return' and player.dead then
+        CheckHighScore()
+        --love.load()
+    end
+    if key == "escape" then
+        love.event.quit()
+    end     
+end
+
 function GameOver()
+    CheckHighScore()
 end
 
 function spawnNewEnemy()
@@ -117,7 +156,7 @@ function enemyAi(dt, enemy, player)
         enemy.countdown = 5
     end
 
-    if math.abs(differential) < enemyhitangle and enemy.torpedoloading <= 0 and level > 1 and math.random() < level * 0.001 then
+    if math.abs(differential) < enemyhitangle and enemy.torpedoloading <= 0 and level > 1 and math.random() < level * 0.01 then
         fireTorpedo(enemy)
     end
 
@@ -165,8 +204,8 @@ function drawMap()
     love.graphics.printf("MISSION:", 3*width/8, height/8+10, 2*width/8, "center")
     love.graphics.setFont(smallFont)
     local target = targets[math.mod(level, #targets) + 1]
-    love.graphics.printf(target.name, 2*width/8, height/8+50, 4*width/8, "center")
-    local pulse = math.sin(time*5)/4 +0.75
+    love.graphics.printf(target.name, 2*width/8, height/8+55, 4*width/8, "center")
+    local pulse = (math.sin(time*5)/4 + 0.75) * 2
     local colorpulse = math.sin(time*20)/4 +0.75
     love.graphics.setColor(0.1, 1.0*colorpulse, 0.1) 
     love.graphics.setLineWidth(3)
@@ -178,6 +217,7 @@ function drawMap()
     love.graphics.line(posx, posy-10*pulse, posx, posy-18*pulse-10)
     love.graphics.setLineWidth(1)
     love.graphics.setColor(0.1, 1.0, 0.1) 
+    love.graphics.printf("Press Enter to start", 3*width/8, 6.5*height/8, 2*width/8, "center")
 end
 
 function love.draw()
@@ -188,16 +228,16 @@ function love.draw()
     -- love.graphics.printf("X", 10, 40, 100, "left")
     -- love.graphics.printf(math.floor(enemy.x*10)/10, 30, 40, 100, "left")
     -- love.graphics.printf("Y", 130, 40, 100, "left")
-    local enemydistance = math.sqrt((enemy.x - player.x)^2 + (enemy.y - player.x)^2)
-    local enemyhitangle = math.deg(math.atan2(100, enemydistance))
+    -- local enemydistance = math.sqrt((enemy.x - player.x)^2 + (enemy.y - player.x)^2)
+    -- local enemyhitangle = math.deg(math.atan2(100, enemydistance))
 
     -- love.graphics.printf(math.floor(enemy.y*10)/10, 160, 40, 100, "left")
     -- enemyangle = math.deg(math.atan2(enemy.x - player.x, enemy.y - player.y))
     -- differential = math.mod(enemyangle - enemy.heading - 180, 360)
-    love.graphics.printf("A", 10, 80, 100, "left")
-    love.graphics.printf(math.floor(enemydistance*10)/10, 30, 80, 100, "left")
-    love.graphics.printf("B", 130, 80, 100, "left")
-    love.graphics.printf(math.floor(enemyhitangle*10)/10, 160, 80, 100, "left")
+    -- love.graphics.printf("A", 10, 80, 100, "left")
+    -- love.graphics.printf(math.floor(enemydistance*10)/10, 30, 80, 100, "left")
+    -- love.graphics.printf("B", 130, 80, 100, "left")
+    -- love.graphics.printf(math.floor(enemyhitangle*10)/10, 160, 80, 100, "left")
     -- love.graphics.printf("C", 260, 80, 100, "left")
     -- love.graphics.printf(math.floor(differential*10)/10, 290, 80, 100, "left")
     -- love.graphics.printf(math.floor(framerate*10)/10, 500, 10, 100, "left")
@@ -228,6 +268,7 @@ function love.draw()
     if (showMap) then
         drawMap()
     end
+    highscore.draw()
     -- drawEnemy(time/19, 100 * math.sin(time/4) + width/3, 100 * math.cos(time/4) + height/3)
     -- drawEnemy(time/19, 100 * math.cos(time/3) + 2*width/3, 100 * math.cos(time/4) + 2*height/3)
 end
@@ -246,7 +287,7 @@ function moveSubmarine(dt, submarine)
 
     submarine.x = submarine.x + math.sin(math.rad(submarine.heading)) * submarine.speed * dt * 5
     submarine.y = submarine.y + math.cos(math.rad(submarine.heading)) * submarine.speed * dt * 5
-    submarine.heading = submarine.heading + (math.min(submarine.speed,15) + 2*math.sign(submarine.speed)) * submarine.rudder * dt * 0.7;
+    submarine.heading = submarine.heading + (math.min(submarine.speed,15) + 2*math.sign(submarine.speed)) * submarine.rudder * dt * 0.75;
 
     if (submarine.torpedoloading > 0) then
         submarine.torpedoloading = submarine.torpedoloading - dt
@@ -254,10 +295,10 @@ function moveSubmarine(dt, submarine)
 end
 
 function checkKeyboard(dt)
-    if (showMap and love.keyboard.isDown("space", "return")) and time > 1 then
-        showMap = false;
-        return
-    end
+    -- if (showMap and love.keyboard.isDown("space", "return")) and time > 1 then
+    --     showMap = false;
+    --     return
+    -- end
     if love.keyboard.isDown("up", "w") and player.thrust < 20 then
         player.thrust = player.thrust + dt * 3
         fullstop = false
@@ -289,21 +330,15 @@ function checkKeyboard(dt)
             player.rudder = 1
         end
     end
-    if love.keyboard.isDown('q') and not sonar.active then
-        sonar = {active = true, time = time}
-        sonarSound:play()
-    end
-    if love.keyboard.isDown('e','space') and player.torpedoloading <= 0 then
-        fireTorpedo(player)
-    end
-    if love.keyboard.isDown('return') and player.dead then
-        love.load()
-    end
-    if love.keyboard.isDown('o')  then
-        enemy.strategy = 2
-    end
-    if love.keyboard.isDown('p')  then
-        enemy.strategy = 0
-    end
+    -- if love.keyboard.isDown('q') and not sonar.active then
+    --     sonar = {active = true, time = time}
+    --     sonarSound:play()
+    -- end
+    -- if love.keyboard.isDown('e','space') and player.torpedoloading <= 0 then
+    --     fireTorpedo(player)
+    -- end
+    -- if love.keyboard.isDown('return') and player.dead then
+    --     love.load()
+    -- end
 end
 

@@ -178,7 +178,6 @@ end
 
 function drawExplosions()
     for i=1, #explosions do
-        print(explosions[i].time)
         love.graphics.printf(math.floor(time - explosions[i].time*10)/10, 30, 80, 100, "left")
         if (time - explosions[i].time) < 2 then
             posx = (player.x - explosions[i].x) * displayScale + width/2
@@ -233,7 +232,7 @@ function drawTorpedo(submarine, target)
             target.dead = true
             target.countdown = 5
             if (target == enemy) then
-                score = score + 100 + math.ceil(5 * math.max(15 - time - enemy.time, 0))
+                score = score + 90 + 10*level + math.ceil(5 * math.max(30 - time - enemy.time, 0))
                 kills = kills + 1
             end
             enemy.lastKnown = nil
