@@ -17,7 +17,6 @@ function highscore.load()
         300,
         function ()
             highscorestate = "done"
-            print("done")
         end
     )
 end
@@ -31,7 +30,6 @@ function highscore.update(dt)
         table.insert(HighScores, {playername, score})
         table.sort(HighScores, scoresort)
         highscorestate = "highscores"
-        print("highscores")
         restarttime = time
         sendHighScore(playername, score)
         getHighScores()
@@ -112,6 +110,7 @@ end
 function getHighScores()
     b, c, h = http.request ("http://dreamlo.com/lb/5d7fe66ed1041303ecaac404/pipe/10")
 
+    HighScores = {}
     lines = string.explode(b, "\n")
     for i,v in pairs(lines) do
         tbl = string.explode(v, "|")
