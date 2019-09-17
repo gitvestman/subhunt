@@ -93,13 +93,10 @@ function CheckHighScore()
     if (highscorestate ~= "none") then
         return
     end
-    print("CheckHighScore")
     if score > 0 and (#HighScores < 10 or score > HighScores[10][2]) then
         highscorestate = "input"
-        print("c:input")
     elseif (#HighScores) > 1 then
         highscorestate = "highscores"
-        print("c:highscore")
         restarttime = time
     else
         love.load()
