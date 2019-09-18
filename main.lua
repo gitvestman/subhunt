@@ -1,7 +1,15 @@
 require "controlpanel"
 require "highscore"
+require "multiplayer"
 
 function love.load()
+    -- multiplayerAvailable = multiplayer.ping()
+    -- player = {x = 0, y = 0, 
+    --         speed = 10, thrust = 10, heading = 0, rudder = 0, 
+    --         torpedoloading = 0, torpedos = {}, type = "player" }
+    -- multiplayer.join()
+    -- multiplayer.update()
+    -- love.event.quit()
     love.math.setRandomSeed(1337)
     mainFont = love.graphics.newFont(36)
     smallFont = love.graphics.newFont(24)
@@ -146,15 +154,16 @@ end
 
 function spawnNewEnemy()
     angle = love.math.random() * (90 * #enemies + level * 10) - 45 * #enemies + player.heading
-    enemy = {x = player.x + math.sin(math.rad(angle)) * (1200 + #enemies*100), y = player.y + math.cos(math.rad(angle)) * (1200 + #enemies*100), 
-            speed = 10, thrust = 10, heading = 180-angle, rudder = 0, dead = false, countdown = 5, 
-            torpedoloading = 0, torpedos = {}, time = time, type = "enemy"}            
+    enemy = {x = player.x + math.sin(math.rad(angle)) * (1200 + #enemies*150), 
+             y = player.y + math.cos(math.rad(angle)) * (1200 + #enemies*150), 
+            speed = 7 + love.math.random(4), thrust = 10, heading = 180 - angle + 30 * (love.math.random(3) - 2) , rudder = 0, dead = false, countdown = 5, 
+            torpedoloading = math.max(8 - level/2, 1), torpedos = {}, time = time, type = "enemy"}            
     enemy.strategy = math.floor(love.math.random()*4)    
     enemies[#enemies + 1] = enemy
 end
 
 function enemyAi(dt, enemy, player)
-    if (enemy.dead) then
+    if (showMap or enemy.dead) then
         return
     end
     local calcx = player.lastKnown.x + math.sin(math.rad(player.lastKnown.heading)) * player.lastKnown.speed * (time - player.lastKnown.time) * 5
@@ -173,7 +182,7 @@ function enemyAi(dt, enemy, player)
         enemy.countdown = 5
     end
 
-    if math.abs(differential) < enemyhitangle and enemy.torpedoloading <= 0 and level > 1 and math.random() < level * 0.01 then
+    if math.abs(differential) < enemyhitangle and enemy.torpedoloading <= 0 and level > 1 then
         fireTorpedo(enemy)
     end
 
@@ -206,7 +215,10 @@ function fireTorpedo(submarine)
     torpedo = {x = submarine.x, y = submarine.y, heading = submarine.heading, speed = 50, time = time}
     submarine.lastKnown = {x = submarine.x, y = submarine.y, speed = submarine.speed, heading = submarine.heading, time=time}
     submarine.torpedos[#submarine.torpedos + 1] = torpedo
-    submarine.torpedoloading = 6
+    submarine.torpedoloading = 5
+    if (submarine.type == "enemy") and level < 5 then
+        submarine.torpedoloading = submarine.torpedoloading + (5 - level)
+    end
     torpedoSound:play()
 end
 
@@ -278,13 +290,15 @@ function love.draw()
         end
         drawExplosions()
     endStencil(player.heading)
-    if (player.dead) then
+    if (player.dead and finalCountdown < 3) then
         love.graphics.setFont(mainFont)
         love.graphics.printf("Game Over", width/2 - 150, 1*height/3, 300, "center")
         love.graphics.setFont(smallFont)
-        love.graphics.printf("Press Enter to start over", width/2 - 150, 1*height/3 + 50, 300, "center")
+        if (finalCountdown <= 0) then
+            love.graphics.printf("Press Enter to start over", width/2 - 150, 1*height/3 + 50, 300, "center")
+        end
     end
-    if #enemies == 0 and kills >= level and (time - finalCountdown) > 3 then
+    if #enemies == 0 and kills >= level and finalCountdown < 3 then
         love.graphics.setFont(mainFont)
         love.graphics.printf("Mission Completed", width/2 - 150, 1*height/3, 300, "center")
         love.graphics.setFont(smallFont)

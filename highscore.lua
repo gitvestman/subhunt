@@ -4,6 +4,8 @@ http = require("socket.http")
 
 highscore = {}
 
+ranks = {"Lieutenant", "Commander", "Captain", "Admiral"}
+
 function highscore.load()
     HighScores = {};
     getHighScores();
@@ -11,10 +13,10 @@ function highscore.load()
     highscorestate = "none"
 
     textbox = TextInput(
-        love.graphics.getWidth()/2 - 150,
+        love.graphics.getWidth()/2 - 200,
         love.graphics.getHeight()/2 - 150,
         11,
-        300,
+        400,
         function ()
             highscorestate = "done"
         end
@@ -45,12 +47,12 @@ end
 
 function highscore.draw()
     if (#HighScores) > 1 then
-        love.graphics.print("Champion:", 10, 10, 0, 1)
-        love.graphics.print(HighScores[1][1]..": "..HighScores[1][2], 10, 40, 0, 1)
+        love.graphics.print("Top Dog:", 10, 10, 0, 1)
+        love.graphics.print(getRank(HighScores[1][2]).." "..HighScores[1][1]..": "..HighScores[1][2], 10, 40, 0, 1)
     end
 
     if highscorestate == "input" then
-        textbox:draw()
+        textbox:draw(getRank(score))
     elseif highscorestate == "highscores" then
         love.graphics.rectangle("line", width/2 - 250 , height/2-200,500, 500) 
         love.graphics.setColor(0.1, 0.3, 0.1, 0.9) 
@@ -59,18 +61,22 @@ function highscore.draw()
         --love.graphics.setShader()
         love.graphics.setColor(0.1, 1.0, 0.1) 
         texty = height/2-160
-        love.graphics.printf("Top Scores", width/2 - 200, texty ,300)
+        love.graphics.printf("Hall of fame", width/2 - 200, texty ,300)
         texty = texty + 50
         for i,v in ipairs(HighScores) do 
             if i < 10 then
-                love.graphics.printf(v[1], width/2 - 200, texty ,300)
-                love.graphics.printf(v[2], width/2, texty ,300)
+                love.graphics.printf(getRank(v[2]).." "..v[1], width/2 - 200, texty ,300)
+                love.graphics.printf(v[2], width/2 + 100, texty ,300)
                 texty = texty + 35
             else
                 HighScores[i] = nil
             end
         end
     end
+end
+
+function getRank(score)
+    return ranks[math.min(math.floor(score/200) + 1, #ranks)]
 end
 
 function love.textinput(text)
@@ -83,6 +89,9 @@ function highscore.keypressed(key)
     if highscorestate == "input" then
         textbox:keypressed(key)
         return true
+    end
+    if highscorestate == "highscores" and (key == "space" or key == "return") then
+        love.load()
     end
     return false
 end

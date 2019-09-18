@@ -62,20 +62,22 @@ function TextInput:textinput(key)
 	end
 end
 
-function TextInput:draw()
-    love.graphics.rectangle("line", self.x - 10 , self.y - 40 , self.w + 20, 100) 
+function TextInput:draw(rank)
+    love.graphics.rectangle("line", self.x - 10 , self.y - 40 , self.w + 20, 150) 
 	love.graphics.setColor(0.1, 0.3, 0.1, 0.9) 
     --love.graphics.setShader(gradient_shader)
-    love.graphics.rectangle("fill", self.x - 10 , self.y - 40 , self.w + 20, 100) 
-    love.graphics.setShader()
+    love.graphics.rectangle("fill", self.x - 10 , self.y - 40 , self.w + 20, 150) 
+    --love.graphics.setShader()
 
 	love.graphics.setColor(0.1, 1.0, 0.1) 
-	love.graphics.printf("Enter nic", self.x, self.y - 30 , self.w)
-	love.graphics.printf(self.text, self.x, self.y, self.w)
+	love.graphics.printf("Well done "..rank.."!", self.x, self.y - 30 , self.w)
+	love.graphics.printf("You made it to the hall of fame.", self.x, self.y , self.w)
+	love.graphics.printf("Enter your name", self.x, self.y + 30 , self.w)
+	love.graphics.printf(self.text, self.x, self.y+60, self.w)
 	love.graphics.printf(
 		self.cursor,
 		self.x+love.graphics.getFont():getWidth(string.sub(self.text, 1, self.cursor_pos))-love.graphics.getFont():getWidth(self.cursor)/2,
-		self.y,
+		self.y+60,
 		self.w
 	)
 end
