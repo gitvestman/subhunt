@@ -85,7 +85,7 @@ function love.update(dt)
         end
     end
 
-    if #enemies == 0 then
+    if #enemies == 0 and not player.dead then
         if finalCountdown > 0 then
             finalCountdown = finalCountdown - dt
         else
@@ -297,8 +297,7 @@ function love.draw()
         if (finalCountdown <= 0) then
             love.graphics.printf("Press Enter to start over", width/2 - 150, 1*height/3 + 50, 300, "center")
         end
-    end
-    if #enemies == 0 and kills >= level and finalCountdown < 3 then
+    elseif #enemies == 0 and kills >= level and finalCountdown < 3 then
         love.graphics.setFont(mainFont)
         love.graphics.printf("Mission Completed", width/2 - 150, 1*height/3, 300, "center")
         love.graphics.setFont(smallFont)
