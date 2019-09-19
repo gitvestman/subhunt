@@ -69,10 +69,10 @@ function drawPlayer()
         love.graphics.line(width/2-10, height/2+10, width/2+10, height/2-10)
     else
         if (math.abs(player.thrust) > 6) then
-            love.graphics.ellipse("fill", width/2, height/2, height/150, height/80)
+            love.graphics.ellipse("fill", width/2, height/2, height/150, height/70)
             player.lastKnown = {x = player.x, y = player.y, speed = player.speed, heading = player.heading, time=time}
         else
-            love.graphics.ellipse("line", width/2, height/2, height/150, height/80)
+            love.graphics.ellipse("line", width/2, height/2, height/150, height/70)
         end
     end
 end
@@ -198,49 +198,57 @@ function createExplosion(x, y)
 end
 
 function drawTorpedo(submarine, targets)
+    activeTorpedo = false
     for i=#submarine.torpedos,1,-1 do
+        --print("Torpedo:"..submarine.type..": "..tostring(torpedo.x)..":"..tostring(torpedo.speed))
         local torpedo = submarine.torpedos[i]
         if (time - torpedo.time > 10) then
             table.remove(submarine.torpedos, i)
-            return
-        end
-
-        calcx = torpedo.x + math.sin(math.rad(torpedo.heading)) * torpedo.speed * (time - torpedo.time) * 5
-        calcy = torpedo.y + math.cos(math.rad(torpedo.heading)) * torpedo.speed * (time - torpedo.time) * 5
-        posx = (player.x - calcx) * displayScale + width/2
-        posy = (player.y - calcy) * displayScale + height/2
-        for i, target in ipairs(targets) do
-            local dx = calcx - target.x
-            local dy = calcy - target.y
-            if dx^2 + dy^2 < 3600 then
-                createExplosion(calcx, calcy)
-                table.remove(submarine.torpedos, i)
-                torpedo.speed = 0
-                target.dead = true
-                finalCountdown = 5
-                if (target.type == "enemy") then
-                    score = score + 50 + 10*level + math.ceil(5 * math.max(30 - time - target.time, 0))
-                    kills = kills + 1
-                    target.lastKnown = nil
+        else
+            calcx = torpedo.x + math.sin(math.rad(torpedo.heading)) * torpedo.speed * (time - torpedo.time) * 5
+            calcy = torpedo.y + math.cos(math.rad(torpedo.heading)) * torpedo.speed * (time - torpedo.time) * 5
+            posx = (player.x - calcx) * displayScale + width/2
+            posy = (player.y - calcy) * displayScale + height/2
+            for i, target in ipairs(targets) do
+                local dx = calcx - target.x
+                local dy = calcy - target.y
+                if dx^2 + dy^2 < 3600 then
+                    createExplosion(calcx, calcy)
+                    table.remove(submarine.torpedos, i)
+                    torpedo.speed = 0
+                    target.dead = true
+                    finalCountdown = 5
+                    if (target.type == "enemy") then
+                        score = score + 50 + 10*level + math.ceil(5 * math.max(30 - time - target.time, 0))
+                        kills = kills + 1
+                        target.lastKnown = nil
+                    end
                 end
             end
-        end
-        if checkOnDisplay(posx, posy) then
-            love.graphics.setColor(0.7, 0.3, 0.1) 
-            love.graphics.circle("fill", posx, posy, height/150)
-            love.graphics.setColor(0.1, 1.0, 0.1) 
-        else 
-            table.remove(submarine.torpedos, i)
+            if torpedo.speed > 0 and checkOnDisplay(posx, posy) then
+                love.graphics.setColor(0.7, 0.3, 0.1) 
+                love.graphics.circle("fill", posx, posy, height/150)
+                love.graphics.setColor(0.1, 1.0, 0.1) 
+                activeTorpedo = true
+            end
         end
     end
+    return activeTorpedo
 end
 
 
-function drawDot(mode, x, y, r)
+function drawDot(mode, x, y, r, h)
     posx = (player.x - x) * displayScale + width/2
     posy = (player.y - y) * displayScale + height/2
     if checkOnDisplay(posx, posy) then
-        love.graphics.circle(mode, posx, posy, r)
+        --love.graphics.circle(mode, posx, posy, r)
+        love.graphics.translate(posx, posy)
+        love.graphics.rotate(math.rad(180-h))
+        love.graphics.translate(-posx, -posy)
+        love.graphics.ellipse(mode, posx, posy, r/1.5, r)
+        love.graphics.translate(posx, posy)
+        love.graphics.rotate(-math.rad(180-h))
+        love.graphics.translate(-posx, -posy)
     end
 end
 
@@ -253,7 +261,7 @@ function drawEnemies()
         love.graphics.setColor(0.1, 1.0 * pulse, 0.1) 
         if enemy.thrust > 6 then
 
-            drawDot("fill", enemy.x, enemy.y, height/100 * pulse/2 + height/120)
+            drawDot("fill", enemy.x, enemy.y, height/100 * pulse/2 + height/90, enemy.heading)
             enemy.lastKnown = {x = enemy.x, y = enemy.y, speed = enemy.speed, heading = enemy.heading, time=time}
 
         elseif (enemy.lastKnown ~= nil) then   
@@ -264,14 +272,14 @@ function drawEnemies()
 
             local pulse = math.cos((time-enemy.lastKnown.time)/30)/4 + 0.75
             love.graphics.setColor(0.1, 1.0 * pulse, 0.1) 
-            drawDot("line", enemy.lastKnown.x, enemy.lastKnown.y, height/60)
+            drawDot("line", enemy.lastKnown.x, enemy.lastKnown.y, height/70, enemy.lastKnown.heading)
 
             calcx = enemy.lastKnown.x + math.sin(math.rad(enemy.lastKnown.heading)) * enemy.lastKnown.speed * (time - enemy.lastKnown.time) * 5
             calcy = enemy.lastKnown.y + math.cos(math.rad(enemy.lastKnown.heading)) * enemy.lastKnown.speed * (time - enemy.lastKnown.time) * 5
 
             pulse = math.cos((time-enemy.lastKnown.time)/15)/4 + 0.75
             love.graphics.setColor(0.1, 1.0 * pulse, 0.1) 
-            drawDot("line", calcx, calcy, height/100 * pulse/2 + height/120)
+            drawDot("line", calcx, calcy, height/100 * pulse/2 + height/90, enemy.lastKnown.heading)
 
             cpx = (player.x - calcx) * displayScale + width/2
             cpy = (player.y - calcy) * displayScale + height/2        

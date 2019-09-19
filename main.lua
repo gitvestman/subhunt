@@ -38,14 +38,15 @@ function love.load()
     player.lastKnown = {x = player.x, y = player.y, speed = player.speed, heading = player.heading, time=time}
     sonar = {active = false, time = time}
     -- sonarSound:play()
-    map = love.graphics.newImage("World.jpg")
-    targets = {{name = "Baltic Sea: Search and destroy", x = 645, y = 130},
-        {name = "South China Sea: Search and destroy", x = 1030, y = 330},
-        {name = "North Sea: Search and destroy", x = 580, y = 110},
-        {name = "Persian Gulf: Search and destroy", x = 730, y = 300},
-        {name = "Sulu Sea: Search and destroy", x = 1060, y = 360},
-        {name = "Gulf of Mexico: Search and destroy", x = 240, y = 280}}
+    map = love.graphics.newImage("World.png")
+    targets = {{name = "Baltic Sea", x = 645, y = 130},
+        {name = "South China Sea", x = 1030, y = 330},
+        {name = "North Sea", x = 580, y = 110},
+        {name = "Persian Gulf", x = 730, y = 300},
+        {name = "Sulu Sea", x = 1060, y = 360},
+        {name = "Gulf of Mexico", x = 240, y = 280}}
     showMap = true
+    enemyTorpedo = false
 
     highscore.load()
 
@@ -57,7 +58,7 @@ function newLevel()
     print("newLevel: "..level)
     player = {x = 0, y = 0, 
             speed = 10, thrust = 10, heading = 0, rudder = 0, 
-            torpedoloading = 0, torpedos = {} }
+            torpedoloading = 0, torpedos = {}, type = "player" }
     player.lastKnown = {x = player.x, y = player.y, speed = player.speed, heading = player.heading, time=time}
     showMap = true
     kills = 0
@@ -67,8 +68,8 @@ end
 function love.update(dt)
     time = time + dt
     framerate = 1/dt
-    depth = 100 + 20 * math.sin(time*player.speed/500)
-    floor = 180 + 10 * math.cos(time*player.speed/200)    
+    depth = 100 + 10 * math.sin(time*player.speed/500)
+    floor = 180 + 10 * math.cos(player.x/200) + math.sin(player.y/200)
 
     if highscore.update(dt) then
         return 
@@ -94,9 +95,9 @@ function love.update(dt)
             else
                 if (math.mod(level, 2) == 1 and kills == level - 2) then
                     spawnNewEnemy()
-                    if (level > 8) then
-                        spawnNewEnemy()
-                    end
+                elseif (level > 5 and kills == level - 3) then
+                    spawnNewEnemy()
+                    spawnNewEnemy()
                 end
                 spawnNewEnemy()
             end
@@ -156,7 +157,7 @@ function spawnNewEnemy()
     angle = love.math.random() * (90 * #enemies + level * 10) - 45 * #enemies + player.heading
     enemy = {x = player.x + math.sin(math.rad(angle)) * (1200 + #enemies*150), 
              y = player.y + math.cos(math.rad(angle)) * (1200 + #enemies*150), 
-            speed = 7 + love.math.random(4), thrust = 10, heading = 180 - angle + 30 * (love.math.random(3) - 2) , rudder = 0, dead = false, countdown = 5, 
+            speed = 7 + love.math.random(4), thrust = 10, heading = 180 - angle + 60 * (love.math.random(2) - 1.5) , rudder = 0, dead = false, countdown = 5, 
             torpedoloading = math.max(8 - level/2, 1), torpedos = {}, time = time, type = "enemy"}            
     enemy.strategy = math.floor(love.math.random()*4)    
     enemies[#enemies + 1] = enemy
@@ -212,7 +213,8 @@ function enemyAi(dt, enemy, player)
 end
 
 function fireTorpedo(submarine)    
-    torpedo = {x = submarine.x, y = submarine.y, heading = submarine.heading, speed = 50, time = time}
+    torpedo = {x = submarine.x, y = submarine.y, 
+               heading = submarine.heading, speed = 50, time = time}
     submarine.lastKnown = {x = submarine.x, y = submarine.y, speed = submarine.speed, heading = submarine.heading, time=time}
     submarine.torpedos[#submarine.torpedos + 1] = torpedo
     submarine.torpedoloading = 5
@@ -229,17 +231,17 @@ function drawMap()
     love.graphics.setColor(0.1, 1.0, 0.1) 
     love.graphics.rectangle("line", width/8, height/8, 6*width/8, 3*height/4)
     love.graphics.draw(map, width/8, height/4, 0, scale)
-    love.graphics.setFont(mainFont)
-    love.graphics.printf("MISSION:", 3*width/8, height/8+10, 2*width/8, "center")
-    love.graphics.setFont(smallFont)
     local target = targets[math.mod(level - 1, #targets) + 1]
-    love.graphics.printf(target.name, 2*width/8, height/8+55, 4*width/8, "center")
+    love.graphics.setFont(mainFont)
+    love.graphics.printf("MISSION: "..target.name, 2*width/8, height/8+10, 4*width/8, "center")
+    love.graphics.setFont(smallFont)
+    love.graphics.printf("Search and destroy "..tostring(level).." vessels", 2*width/8, height/8+55, 4*width/8, "center")
     local pulse = (math.sin(time*5)/4 + 0.75) * 2
     local colorpulse = math.sin(time*20)/4 +0.75
     love.graphics.setColor(0.1, 1.0*colorpulse, 0.1) 
     love.graphics.setLineWidth(3)
-    local posx = target.x * scale + width/8
-    local posy = target.y * scale + height/4
+    local posx = target.x * scale * map:getWidth()/1280 + width/8
+    local posy = target.y * scale * map:getWidth()/1280 + height/4
     love.graphics.line(posx-10*pulse, posy, posx-18*pulse-10, posy)
     love.graphics.line(posx+10*pulse, posy, posx+18*pulse+10, posy)
     love.graphics.line(posx, posy+10*pulse, posx, posy+18*pulse + 10)
@@ -248,6 +250,15 @@ function drawMap()
     love.graphics.setColor(0.1, 1.0, 0.1) 
     love.graphics.printf("Press Enter to start", 3*width/8, 6.5*height/8, 2*width/8, "center")
 end
+
+gradient_shader = love.graphics.newShader([[
+    extern number startpos = 0;
+    vec4 effect ( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords ) {
+        vec4 pixel = Texel(texture, texture_coords );
+        float factor = sin(startpos + 3*screen_coords.x/love_ScreenSize.x);
+        return vec4(1.0, 0.1, 0.1, 0.15*factor);      
+    }  
+]])
 
 function love.draw()
     -- love.graphics.printf("X", 10, 10, 100, "left")
@@ -270,26 +281,28 @@ function love.draw()
     -- love.graphics.printf("C", 260, 80, 100, "left")
     -- love.graphics.printf(math.floor(differential*10)/10, 290, 80, 100, "left")
     -- love.graphics.printf(math.floor(framerate*10)/10, 500, 10, 100, "left")
-    love.graphics.printf("Score:", 5*width/6, 10, 100, "left")
-    love.graphics.printf(score, 5*width/6 + 100, 10, 100, "left")
+    love.graphics.printf("Score:", 5*width/6-30, 10, 150, "left")
+    love.graphics.printf(score, 5*width/6 + 80, 10, 70, "right")
+    love.graphics.printf("Remaining:", 5*width/6-30, 40, 150, "left")
+    love.graphics.printf(level - kills, 5*width/6 + 80, 40, 70 , "right")
     drawControlPanel()
     drawSpeed(player.speed)
     drawThrust(player.thrust)
     drawDepth(depth)
     drawFloor(depth, floor)
-    drawPlayer()
     -- Rotated map
     drawStencil(player.heading)
         drawCompass(player.heading, player.x, player.y)
         drawGrid(player)
-        drawEnemies()
         drawSonar()
         drawTorpedo(player, enemies)
         for i, enemy in ipairs(enemies) do
-            drawTorpedo(enemy, {player})
+            enemyTorpedo = drawTorpedo(enemy, {player})
         end
+        drawEnemies()
         drawExplosions()
     endStencil(player.heading)
+    drawPlayer()
     if (player.dead and finalCountdown < 3) then
         love.graphics.setFont(mainFont)
         love.graphics.printf("Game Over", width/2 - 150, 1*height/3, 300, "center")
@@ -306,6 +319,14 @@ function love.draw()
         drawMap()
     end
     highscore.draw()
+    if enemyTorpedo and #enemies > 0 then
+        love.graphics.setColor(0.1, 0.3, 0.1) 
+        gradient_shader:send("startpos",6*time)
+        love.graphics.setShader(gradient_shader)
+        love.graphics.rectangle("fill", 0, 0, width, height) 
+        love.graphics.setShader()
+        love.graphics.setColor(0.1, 1.0, 0.1) 
+    end
 end
 
 function math.sign(x)

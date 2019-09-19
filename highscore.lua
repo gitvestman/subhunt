@@ -76,7 +76,7 @@ function highscore.draw()
 end
 
 function getRank(score)
-    return ranks[math.min(math.floor(score/200) + 1, #ranks)]
+    return ranks[math.min(math.floor(score/250) + 1, #ranks)]
 end
 
 function love.textinput(text)
