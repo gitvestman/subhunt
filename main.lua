@@ -29,10 +29,11 @@ function love.load()
     displayScale = height/4000
     player = {x = 0, y = 0, 
             speed = 10, thrust = 10, heading = 0, rudder = 0, 
-            torpedoloading = 0, torpedos = {}, type = "player" }
+            torpedoloading = 0, type = "player" }
     enemies = {{x = love.math.random() * 1500 - 750, y = love.math.random() * 500 + 1200, 
             speed = 10, thrust = 10, heading = 180, rudder = 0, dead = false, strategy = 1, 
-            torpedoloading = 0, torpedos = {}, time = time, type = "enemy"}}
+            torpedoloading = 0, time = time, type = "enemy"}}
+    torpedos = {}
     finalCountdown = 0
     explosions = {}
     player.lastKnown = {x = player.x, y = player.y, speed = player.speed, heading = player.heading, time=time}
@@ -58,7 +59,7 @@ function newLevel()
     print("newLevel: "..level)
     player = {x = 0, y = 0, 
             speed = 10, thrust = 10, heading = 0, rudder = 0, 
-            torpedoloading = 0, torpedos = {}, type = "player" }
+            torpedoloading = 0, type = "player" }
     player.lastKnown = {x = player.x, y = player.y, speed = player.speed, heading = player.heading, time=time}
     showMap = true
     kills = 0
@@ -81,7 +82,7 @@ function love.update(dt)
     end
 
     for i=#enemies,1,-1 do
-        if (enemies[i].dead) and #enemies[i].torpedos == 0 then
+        if (enemies[i].dead) then
             table.remove(enemies, i)
         end
     end
@@ -158,7 +159,7 @@ function spawnNewEnemy()
     enemy = {x = player.x + math.sin(math.rad(angle)) * (1200 + #enemies*150), 
              y = player.y + math.cos(math.rad(angle)) * (1200 + #enemies*150), 
             speed = 7 + love.math.random(4), thrust = 10, heading = 180 - angle + 60 * (love.math.random(2) - 1.5) , rudder = 0, dead = false, countdown = 5, 
-            torpedoloading = math.max(8 - level/2, 1), torpedos = {}, time = time, type = "enemy"}            
+            torpedoloading = math.max(8 - level/2, 1), time = time, type = "enemy"}            
     enemy.strategy = math.floor(love.math.random()*4)    
     enemies[#enemies + 1] = enemy
 end
@@ -213,10 +214,9 @@ function enemyAi(dt, enemy, player)
 end
 
 function fireTorpedo(submarine)    
-    torpedo = {x = submarine.x, y = submarine.y, 
-               heading = submarine.heading, speed = 50, time = time}
+    torpedo = {x = submarine.x, y = submarine.y, heading = submarine.heading, speed = 50, time = time, source = submarine}
     submarine.lastKnown = {x = submarine.x, y = submarine.y, speed = submarine.speed, heading = submarine.heading, time=time}
-    submarine.torpedos[#submarine.torpedos + 1] = torpedo
+    torpedos[#torpedos + 1] = torpedo
     submarine.torpedoloading = 5
     if (submarine.type == "enemy") and level < 5 then
         submarine.torpedoloading = submarine.torpedoloading + (5 - level)
@@ -295,10 +295,11 @@ function love.draw()
         drawCompass(player.heading, player.x, player.y)
         drawGrid(player)
         drawSonar()
-        drawTorpedo(player, enemies)
-        for i, enemy in ipairs(enemies) do
-            enemyTorpedo = drawTorpedo(enemy, {player})
-        end
+        -- drawTorpedo(player, enemies)
+        -- for i, enemy in ipairs(enemies) do
+        --     enemyTorpedo = drawTorpedo(enemy, {player})
+        -- end
+        enemyTorpedo = drawTorpedos(player, enemies)
         drawEnemies()
         drawExplosions()
     endStencil(player.heading)

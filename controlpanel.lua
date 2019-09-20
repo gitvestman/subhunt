@@ -197,45 +197,57 @@ function createExplosion(x, y)
     explosions[#explosions + 1] = explosion
 end
 
-function drawTorpedo(submarine, targets)
-    activeTorpedo = false
-    for i=#submarine.torpedos,1,-1 do
+function drawTorpedos()
+    enemyTorpedo = false
+    for i=#torpedos,1,-1 do
         --print("Torpedo:"..submarine.type..": "..tostring(torpedo.x)..":"..tostring(torpedo.speed))
-        local torpedo = submarine.torpedos[i]
+        local torpedo = torpedos[i]
         if (time - torpedo.time > 10) then
-            table.remove(submarine.torpedos, i)
+            table.remove(torpedos, i)
         else
             calcx = torpedo.x + math.sin(math.rad(torpedo.heading)) * torpedo.speed * (time - torpedo.time) * 5
             calcy = torpedo.y + math.cos(math.rad(torpedo.heading)) * torpedo.speed * (time - torpedo.time) * 5
-            posx = (player.x - calcx) * displayScale + width/2
-            posy = (player.y - calcy) * displayScale + height/2
-            for i, target in ipairs(targets) do
-                local dx = calcx - target.x
-                local dy = calcy - target.y
-                if dx^2 + dy^2 < 3600 then
-                    createExplosion(calcx, calcy)
-                    table.remove(submarine.torpedos, i)
-                    torpedo.speed = 0
-                    target.dead = true
-                    finalCountdown = 5
-                    if (target.type == "enemy") then
-                        score = score + 50 + 10*level + math.ceil(5 * math.max(30 - time - target.time, 0))
-                        kills = kills + 1
-                        target.lastKnown = nil
+            local dx = calcx - player.x
+            local dy = calcy - player.y
+            if dx^2 + dy^2 < 3600 and torpedo.source ~= player then
+                targetHit(player, calcx, calcy, i)
+            else 
+                for i, target in ipairs(enemies) do                
+                    local dx = calcx - target.x
+                    local dy = calcy - target.y
+                    if dx^2 + dy^2 < 3600 and torpedo.source ~= target then
+                        targetHit(target, calcx, calcy, i)
                     end
                 end
             end
+
+            posx = (player.x - calcx) * displayScale + width/2
+            posy = (player.y - calcy) * displayScale + height/2
+
             if torpedo.speed > 0 and checkOnDisplay(posx, posy) then
+                enemyTorpedo = enemyTorpedo or torpedo.source.type == "enemy"
                 love.graphics.setColor(0.7, 0.3, 0.1) 
                 love.graphics.circle("fill", posx, posy, height/150)
                 love.graphics.setColor(0.1, 1.0, 0.1) 
-                activeTorpedo = true
             end
         end
     end
-    return activeTorpedo
+    return enemyTorpedo
 end
 
+function targetHit(target, x, y, i)
+    --print("Torpedo:"..torpedo.source.type..", Target:"..target.type..": "..tostring(torpedo.x)..":"..tostring(torpedo.speed))
+    table.remove(torpedos, i)
+    torpedo.speed = 0
+    createExplosion(x, y)
+    target.dead = true
+    finalCountdown = 5
+    if (target.type == "enemy") then
+        score = score + 50 + 10*level + math.ceil(5 * math.max(30 - time - target.time, 0))
+        kills = kills + 1
+        target.lastKnown = nil
+    end
+end
 
 function drawDot(mode, x, y, r, h)
     posx = (player.x - x) * displayScale + width/2
