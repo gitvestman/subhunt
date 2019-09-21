@@ -261,6 +261,11 @@ function drawDot(mode, x, y, r, h)
         love.graphics.translate(posx, posy)
         love.graphics.rotate(-math.rad(180-h))
         love.graphics.translate(-posx, -posy)
+        if multiplayerActive then
+            love.graphics.setFont(tinyFont)
+            love.graphics.printf(enemy.name, posx-100, posy-40, 200, "center")
+            love.graphics.setFont(smallFont)        
+        end
     end
 end
 

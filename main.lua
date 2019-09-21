@@ -3,16 +3,18 @@ require "highscore"
 require "multiplayer"
 
 function love.load()
-    -- multiplayerAvailable = multiplayer.ping()
-    -- player = {x = 0, y = 0, 
-    --         speed = 10, thrust = 10, heading = 0, rudder = 0, 
-    --         torpedoloading = 0, torpedos = {}, type = "player" }
-    -- multiplayer.join()
-    -- multiplayer.update()
-    -- love.event.quit()
+    multiplayerAvailable = multiplayer.ping()
+    multiplayerActive = false
+    multiplayerNames = {"Tom", "Joe", "Lucy", "Bob", "Sue", "Carter", "Don", "Ivan", "Maria"}
+    love.math.setRandomSeed(love.timer.getTime())
+    multiplayerName = multiplayerNames[love.math.random(#multiplayerNames)] 
+    player = {x = 0, y = 0, 
+            speed = 10, thrust = 10, heading = 0, rudder = 0, 
+            torpedoloading = 0, torpedos = {}, type = "player", name = multiplayerName }    
     love.math.setRandomSeed(1337)
     mainFont = love.graphics.newFont(36)
     smallFont = love.graphics.newFont(24)
+    tinyFont = love.graphics.newFont(14)
     width = love.graphics.getWidth()
     height = love.graphics.getHeight()
     sonarSound = love.audio.newSource("12677__peter-gross__sonar-pings.ogg", "static")
@@ -68,6 +70,13 @@ end
 
 function love.update(dt)
     time = time + dt
+
+    if multiplayerActive and time - lastMultiplayerUpdate > 1 then
+        multiplayer.asyncupdate()
+        lastMultiplayerUpdate = time
+        --dispatcher()
+    end
+
     framerate = 1/dt
     depth = 100 + 10 * math.sin(time*player.speed/500)
     floor = 180 + 10 * math.cos(player.x/200) + math.sin(player.y/200)
@@ -115,7 +124,13 @@ function love.update(dt)
         moveSubmarine(dt, player)
         for i, enemy in ipairs(enemies) do
             moveSubmarine(dt, enemy)
-            enemyAi(dt, enemy, player)
+            if multiplayerActive then 
+                if (enemy.name == "AI") then
+                    enemyAi(dt, enemy, player)
+                end
+            else
+                enemyAi(dt, enemy, player)
+            end
         end
         propellerSound:setPitch(math.abs(player.thrust * 0.05) + 0.5)
         propellerSound:setVolume(math.max(math.abs(player.thrust * 0.05) - 0.25, 0))
@@ -131,7 +146,20 @@ function love.keypressed(key)
         return
     end
     if showMap and (key == "space" or key == "return") and time > 1 then
-        showMap = false;
+        showMap = false
+        return
+    end
+    if showMap and key == "m" then
+        multiplayerActive = true
+        lastMultiplayerUpdate = time
+        local angle = love.math.random(360)
+        player = {x = math.cos(math.rad(angle))*1500, y = math.sin(math.rad(angle))*1500, 
+            speed = 10, thrust = 10, heading = angle, rudder = 0, torpedoloading = 0, type = "player", name = multiplayerName }
+        player.lastKnown = {x = player.x, y = player.y, speed = player.speed, heading = player.heading, time=time}
+        print("Player x:"..player.x.." y:"..player.y)
+        enemies = {{x = 0, y = 0, speed = 10, thrust = 0, heading = 0, rudder = 0, dead = false, strategy = 1, torpedoloading = 0, time = time, type = "enemy", name="AI"}}
+        multiplayer.join()
+        showMap = false
         return
     end
     if key == 'q' and not sonar.active then
@@ -170,13 +198,14 @@ function enemyAi(dt, enemy, player)
     end
     local calcx = player.lastKnown.x + math.sin(math.rad(player.lastKnown.heading)) * player.lastKnown.speed * (time - player.lastKnown.time) * 5
     local calcy = player.lastKnown.y + math.cos(math.rad(player.lastKnown.heading)) * player.lastKnown.speed * (time - player.lastKnown.time) * 5
-    local enemydistance = math.sqrt((enemy.x - calcx)^2 + (enemy.y - calcy)^2)
+    local calcenemydistance = math.sqrt((enemy.x - calcx)^2 + (enemy.y - calcy)^2)
+    local actualenemydistance = math.sqrt((enemy.x - player.x)^2 + (enemy.y - player.y)^2)
     local enemyangle = math.deg(math.atan2(enemy.x - calcx, enemy.y - calcy))
-    local enemyhitangle = math.deg(math.atan2(100, enemydistance)) + math.max(12 - level*2, 0)
+    local enemyhitangle = math.deg(math.atan2(100, calcenemydistance)) + math.max(12 - level*2, 0)
     local differential = math.mod(enemyangle - enemy.heading - 180, 360)
 
-    if enemydistance < 50 then
-        print("Enemydistance "..tostring(enemydistance))
+    if actualenemydistance < 50 then
+        print("Enemydistance "..tostring(actualenemydistance))
         createExplosion(player.x, player.y)
         createExplosion(enemy.x, enemy.y)
         enemy.dead = true
@@ -188,7 +217,7 @@ function enemyAi(dt, enemy, player)
         fireTorpedo(enemy)
     end
 
-    if bit.band(enemy.strategy, 0x01) and enemydistance < 1300 then -- stealth
+    if bit.band(enemy.strategy, 0x01) and calcenemydistance < 1300 then -- stealth
         if (enemy.thrust > 5) then
             enemy.thrust = enemy.thrust - dt/2
         end
@@ -197,7 +226,7 @@ function enemyAi(dt, enemy, player)
             enemy.thrust = enemy.thrust + dt/2
         end
     end
-    if bit.band(enemy.strategy, 0x02) and enemydistance < 1300 and enemydistance > 300 and math.abs(differential) < enemyhitangle + 30  then -- flee
+    if bit.band(enemy.strategy, 0x02) and calcenemydistance < 1300 and calcenemydistance > 300 and math.abs(differential) < enemyhitangle + 30  then -- flee
         if (differential > 0) then 
             enemy.rudder = 1
         else
@@ -261,26 +290,6 @@ gradient_shader = love.graphics.newShader([[
 ]])
 
 function love.draw()
-    -- love.graphics.printf("X", 10, 10, 100, "left")
-    -- love.graphics.printf(math.floor(player.x*10)/10, 30, 10, 100, "left")
-    -- love.graphics.printf("Y", 130, 10, 100, "left")
-    -- love.graphics.printf(math.floor(player.y*10)/10, 160, 10, 100, "left")
-    -- love.graphics.printf("X", 10, 40, 100, "left")
-    -- love.graphics.printf(math.floor(enemy.x*10)/10, 30, 40, 100, "left")
-    -- love.graphics.printf("Y", 130, 40, 100, "left")
-    -- local enemydistance = math.sqrt((enemy.x - player.x)^2 + (enemy.y - player.x)^2)
-    -- local enemyhitangle = math.deg(math.atan2(100, enemydistance))
-
-    -- love.graphics.printf(math.floor(enemy.y*10)/10, 160, 40, 100, "left")
-    -- enemyangle = math.deg(math.atan2(enemy.x - player.x, enemy.y - player.y))
-    -- differential = math.mod(enemyangle - enemy.heading - 180, 360)
-    -- love.graphics.printf("A", 10, 80, 100, "left")
-    -- love.graphics.printf(math.floor(enemydistance*10)/10, 30, 80, 100, "left")
-    -- love.graphics.printf("B", 130, 80, 100, "left")
-    -- love.graphics.printf(math.floor(enemyhitangle*10)/10, 160, 80, 100, "left")
-    -- love.graphics.printf("C", 260, 80, 100, "left")
-    -- love.graphics.printf(math.floor(differential*10)/10, 290, 80, 100, "left")
-    -- love.graphics.printf(math.floor(framerate*10)/10, 500, 10, 100, "left")
     love.graphics.printf("Score:", 5*width/6-30, 10, 150, "left")
     love.graphics.printf(score, 5*width/6 + 80, 10, 70, "right")
     love.graphics.printf("Remaining:", 5*width/6-30, 40, 150, "left")
@@ -318,6 +327,12 @@ function love.draw()
     end
     if (showMap) then
         drawMap()
+        if multiplayerAvailable then
+            love.graphics.printf("[M] Start multiplayer (Experimental)", width/2 - 250, 1*height/12, 500, "center")
+        end
+    end
+    if multiplayerActive then
+        love.graphics.printf("Multiplayer (Experimental)", width/2 - 250, 1*height/12, 500, "center")
     end
     highscore.draw()
     if enemyTorpedo and #enemies > 0 then
