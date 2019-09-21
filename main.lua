@@ -176,12 +176,12 @@ function enemyAi(dt, enemy, player)
     local differential = math.mod(enemyangle - enemy.heading - 180, 360)
 
     if enemydistance < 50 then
+        print("Enemydistance "..tostring(enemydistance))
         createExplosion(player.x, player.y)
         createExplosion(enemy.x, enemy.y)
         enemy.dead = true
         player.dead = true
-        player.countdown = 5
-        enemy.countdown = 5
+        finalCountdown = 5
     end
 
     if math.abs(differential) < enemyhitangle and enemy.torpedoloading <= 0 and level > 1 then
