@@ -171,12 +171,12 @@ function enemyAi(dt, enemy, player)
     local calcx = player.lastKnown.x + math.sin(math.rad(player.lastKnown.heading)) * player.lastKnown.speed * (time - player.lastKnown.time) * 5
     local calcy = player.lastKnown.y + math.cos(math.rad(player.lastKnown.heading)) * player.lastKnown.speed * (time - player.lastKnown.time) * 5
     local enemydistance = math.sqrt((enemy.x - calcx)^2 + (enemy.y - calcy)^2)
+    local actualenemydistance = math.sqrt((enemy.x - player.x)^2 + (enemy.y - player.y)^2)
     local enemyangle = math.deg(math.atan2(enemy.x - calcx, enemy.y - calcy))
     local enemyhitangle = math.deg(math.atan2(100, enemydistance)) + math.max(12 - level*2, 0)
     local differential = math.mod(enemyangle - enemy.heading - 180, 360)
 
-    if enemydistance < 50 then
-        print("Enemydistance "..tostring(enemydistance))
+    if actualenemydistance < 50 then
         createExplosion(player.x, player.y)
         createExplosion(enemy.x, enemy.y)
         enemy.dead = true
