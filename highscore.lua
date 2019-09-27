@@ -3,6 +3,7 @@ require 'TextInput'
 http = require("socket.http")
 
 highscore = {}
+offline = false
 
 ranks = {"Lieutenant", "Commander", "Captain", "Admiral"}
 
@@ -97,7 +98,7 @@ function highscore.keypressed(key)
 end
 
 function CheckHighScore()
-    if (highscorestate ~= "none") then
+    if (highscorestate ~= "none" or offline) then
         return
     end
     if score > 0 and (#HighScores < 10 or score > HighScores[10][2]) then
@@ -117,9 +118,14 @@ function sendHighScore(playername, score)
 end
 
 function getHighScores()
-    b, c, h = http.request ("http://dreamlo.com/lb/5d7fe66ed1041303ecaac404/pipe/10")
+    http.TIMEOUT = 5
+    b, c, h = http.request("http://dreamlo.com/lb/5d7fe66ed1041303ecaac404/pipe/10")
 
     HighScores = {}
+    if (c == "timeout") then
+        offline = true
+        return
+    end
     lines = string.explode(b, "\n")
     for i,v in pairs(lines) do
         tbl = string.explode(v, "|")
