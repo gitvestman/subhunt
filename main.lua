@@ -11,10 +11,11 @@ function love.load()
     -- multiplayer.update()
     -- love.event.quit()
     love.math.setRandomSeed(1337)
-    mainFont = love.graphics.newFont(36)
-    smallFont = love.graphics.newFont(24)
     width = love.graphics.getWidth()
     height = love.graphics.getHeight()
+    mainFont = love.graphics.newFont(height/21)
+    smallFont = love.graphics.newFont(height/32)
+    lineheight = height/25
     sonarSound = love.audio.newSource("12677__peter-gross__sonar-pings.ogg", "static")
     torpedoSound = love.audio.newSource("327990__bymax__processed-swish-swoosh-whoosh.ogg", "static")
     explosionSound = love.audio.newSource("147873__zesoundresearchinc__depthbomb-04.ogg", "static")
@@ -225,30 +226,32 @@ function fireTorpedo(submarine)
 end
 
 function drawMap()
-    local scale = width/map:getWidth() * 3/4
+    local scale = math.min(width/map:getWidth() * 3/4, height/map:getHeight() * 3/5)
+    local mapHeight = map:getHeight()*scale
+    local mapWidth = map:getWidth()*scale
     love.graphics.setColor(0.1, 0.3, 0.1) 
-    love.graphics.rectangle("fill", width/8, height/8, 6*width/8, 3*height/4)
+    love.graphics.rectangle("fill", width/2 - mapWidth/2, height/2 - mapHeight/2 - 2 * lineheight, mapWidth, mapHeight + 4 * lineheight)
     love.graphics.setColor(0.1, 1.0, 0.1) 
-    love.graphics.rectangle("line", width/8, height/8, 6*width/8, 3*height/4)
-    love.graphics.draw(map, width/8, height/4, 0, scale)
+    love.graphics.rectangle("line", width/2 - mapWidth/2, height/2 - mapHeight/2 - 2 * lineheight, mapWidth, mapHeight + 4 * lineheight)
+    love.graphics.draw(map, width/2 - mapWidth/2, height/2 - mapHeight/2 + lineheight, 0, scale)
     local target = targets[math.mod(level - 1, #targets) + 1]
     love.graphics.setFont(mainFont)
-    love.graphics.printf("MISSION: "..target.name, 2*width/8, height/8+10, 4*width/8, "center")
+    love.graphics.printf("MISSION: "..target.name, 2*width/8,  height/2 - mapHeight/2 - 2 * lineheight + 10, 4*width/8, "center")
     love.graphics.setFont(smallFont)
-    love.graphics.printf("Search and destroy "..tostring(level).." vessels", 2*width/8, height/8+55, 4*width/8, "center")
+    love.graphics.printf("Search and destroy "..tostring(level).." vessels", 2*width/8, height/2 - mapHeight/2, 4*width/8, "center")
     local pulse = (math.sin(time*5)/4 + 0.75) * 2
     local colorpulse = math.sin(time*20)/4 +0.75
     love.graphics.setColor(0.1, 1.0*colorpulse, 0.1) 
     love.graphics.setLineWidth(3)
-    local posx = target.x * scale * map:getWidth()/1280 + width/8
-    local posy = target.y * scale * map:getWidth()/1280 + height/4
+    local posx = target.x * scale * map:getWidth()/1280 + width/2 - mapWidth/2
+    local posy = target.y * scale * map:getWidth()/1280 + height/2 - mapHeight/2 + lineheight
     love.graphics.line(posx-10*pulse, posy, posx-18*pulse-10, posy)
     love.graphics.line(posx+10*pulse, posy, posx+18*pulse+10, posy)
     love.graphics.line(posx, posy+10*pulse, posx, posy+18*pulse + 10)
     love.graphics.line(posx, posy-10*pulse, posx, posy-18*pulse-10)
     love.graphics.setLineWidth(1)
     love.graphics.setColor(0.1, 1.0, 0.1) 
-    love.graphics.printf("Press Enter to start", 3*width/8, 6.5*height/8, 2*width/8, "center")
+    love.graphics.printf("Press Enter to start", 3*width/8, height/2 + mapHeight/2 + lineheight, 2*width/8, "center")
 end
 
 gradient_shader = love.graphics.newShader([[
@@ -282,9 +285,9 @@ function love.draw()
     -- love.graphics.printf(math.floor(differential*10)/10, 290, 80, 100, "left")
     -- love.graphics.printf(math.floor(framerate*10)/10, 500, 10, 100, "left")
     love.graphics.printf("Score:", 5*width/6-30, 10, 150, "left")
-    love.graphics.printf(score, 5*width/6 + 80, 10, 70, "right")
-    love.graphics.printf("Remaining:", 5*width/6-30, 40, 150, "left")
-    love.graphics.printf(level - kills, 5*width/6 + 80, 40, 70 , "right")
+    love.graphics.printf(score, 5*width/6 + lineheight*2, 10, lineheight * 2, "right")
+    love.graphics.printf("Remaining:", 5*width/6-30, lineheight + 15, 150, "left")
+    love.graphics.printf(level - kills, 5*width/6 + lineheight*2, lineheight + 15, lineheight * 2 , "right")
     drawControlPanel()
     drawSpeed(player.speed)
     drawThrust(player.thrust)

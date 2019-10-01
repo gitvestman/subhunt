@@ -49,26 +49,26 @@ end
 function highscore.draw()
     if (#HighScores) > 1 then
         love.graphics.print("Top Dog:", 10, 10, 0, 1)
-        love.graphics.print(getRank(HighScores[1][2]).." "..HighScores[1][1]..": "..HighScores[1][2], 10, 40, 0, 1)
+        love.graphics.print(getRank(HighScores[1][2]).." "..HighScores[1][1]..": "..HighScores[1][2], 10, lineheight + 15, 0, 1)
     end
 
     if highscorestate == "input" then
         textbox:draw(getRank(score))
     elseif highscorestate == "highscores" then
-        love.graphics.rectangle("line", width/2 - 250 , height/2-200,500, 500) 
+        love.graphics.rectangle("line", width/4 , height/2-5*lineheight, width/2, 13*lineheight) 
         love.graphics.setColor(0.1, 0.3, 0.1, 0.9) 
         --love.graphics.setShader(gradient_shader)
-        love.graphics.rectangle("fill", width/2 - 250 , height/2-200,500, 500) 
+        love.graphics.rectangle("fill", width/4 , height/2-5*lineheight, width/2, 13*lineheight) 
         --love.graphics.setShader()
         love.graphics.setColor(0.1, 1.0, 0.1) 
-        texty = height/2-160
-        love.graphics.printf("Hall of fame", width/2 - 200, texty ,300)
-        texty = texty + 50
+        texty = height/2-4*lineheight
+        love.graphics.printf("Hall of fame", width/4 + lineheight, texty ,300)
+        texty = texty + lineheight + 10
         for i,v in ipairs(HighScores) do 
             if i < 10 then
-                love.graphics.printf(getRank(v[2]).." "..v[1], width/2 - 200, texty ,300)
-                love.graphics.printf(v[2], width/2 + 100, texty ,300)
-                texty = texty + 35
+                love.graphics.printf(getRank(v[2]).." "..v[1], width/4 + lineheight, texty ,300)
+                love.graphics.printf(v[2], width/2 + 3 * lineheight, texty ,300)
+                texty = texty + lineheight
             else
                 HighScores[i] = nil
             end

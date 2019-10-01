@@ -8,20 +8,20 @@ function drawControlPanel()
     love.graphics.circle("line", width/2, height/2, height/3)
     love.graphics.rectangle("line", width/20, height/6, 7*width/40, 4*height/6)
     love.graphics.setColor(0.1, 0.3, 0.1) 
-    love.graphics.rectangle("fill", width/20+1, height/6+45, 7*width/40-2, 3*height/6+40)
+    love.graphics.rectangle("fill", width/20+1, height/6 + 1.5 * lineheight, 7*width/40-2, 3*height/6+lineheight)
     love.graphics.setColor(0.1, 0.2, 0.1) 
-    love.graphics.line(width/20 + 3.5*width/40, height/6+45, width/20 + 3.5*width/40, height/6+45 + 3*height/6+40)
+    love.graphics.line(width/20 + 3.5*width/40, height/6 + 1.5 * lineheight, width/20 + 3.5*width/40, 4*height/6 + 4.5 * lineheight)
     love.graphics.setColor(0.0, 1.0, 0.0) 
-    love.graphics.print("Depth", width/20+10, height/6+10, 0, 1)
-    love.graphics.print("Floor", 6*width/40, 5*height/6-35, 0, 1)
+    love.graphics.print("Depth", width/20+10, height/6 + lineheight/4, 0, 1)
+    love.graphics.print("Floor", 5.5*width/40, 5*height/6 - lineheight, 0, 1)
     love.graphics.rectangle("line", width - 9*width/40, height/6, 7*width/40, 4*height/6)
     love.graphics.setColor(0.1, 0.3, 0.1) 
-    love.graphics.rectangle("fill", width - 9*width/40 + 1, height/6+45, 7*width/40 - 2, 3*height/6+40)
+    love.graphics.rectangle("fill", width - 9*width/40 + 1, height/6 + 1.5 * lineheight, 7*width/40 - 2, 3*height/6+lineheight)
     love.graphics.setColor(0.1, 0.2, 0.1) 
-    love.graphics.line(43.5*width/40 - 9*width/40, height/6+45, 43.5*width/40 - 9*width/40, height/6+45 + 3*height/6+40)
+    love.graphics.line(43.5*width/40 - 9*width/40, height/6 + 1.5 * lineheight, 43.5*width/40 - 9*width/40, 4*height/6 + 4.5 * lineheight)
     love.graphics.setColor(0.0, 1.0, 0.0) 
-    love.graphics.print("Speed", (width - 9*width/40) + 10, height/6+10, 0, 1)
-    love.graphics.print("Thrust", (width - 6*width/40) + 10, 5*height/6-35, 0, 1)
+    love.graphics.print("Speed", (width - 9*width/40) + 10, height/6 + lineheight/4, 0, 1)
+    love.graphics.print("Thrust", (width - 6*width/40) + 10, 5*height/6 - lineheight, 0, 1)
     love.graphics.print("[W]", 38*width/40+4, height/6 + 40, 0, 1)
     love.graphics.print("[S]", 38*width/40+4, 4*height/6 + 60, 0, 1)
     love.graphics.line((width - 9*width/40) + 10, height/2, (width - 9*width/40), height/2)
@@ -52,7 +52,7 @@ function drawSpeed(speed)
 end
 
 function drawThrust(thrust)
-    drawMeter(thrust, thrust - 40, thrust + 40, 5, (width - 6*width/40) - 15, "right")
+    drawMeter(thrust, thrust - 40, thrust + 40, 5, (width - 6*width/40), "right")
 end
 
 function drawDepth(depth)
@@ -60,7 +60,7 @@ function drawDepth(depth)
 end
 
 function drawFloor(depth, floor)
-    drawMeter(floor - depth, 0, 100, 10, 5*width/40 - 10 , "right")
+    drawMeter(floor - depth, 0, 100, 10, 5.5*width/40 - 5, "right")
 end
 
 function drawPlayer()
@@ -81,7 +81,7 @@ function drawMeter(value, min, max, step, xpos, align)
     for i = math.floor(min/step)*step, math.floor(max/step)*step, step do
         y = (value - i) * height/(8*step) + height/2
         if y > height/6 + 50 and y <  5*height/6 - 40 then
-            love.graphics.printf(i, xpos, y-15, 100, align)
+            love.graphics.printf(i, xpos, y-15, width/12, align)
         end
     end
 end
@@ -150,10 +150,10 @@ function drawCompass(rotation)
     love.graphics.line(width/2, 5*height/6, width/2, 5*height/6-10)     
     love.graphics.line(width/2 - height/3, height/2, width/2 - height/3 + 10, height/2)     
     love.graphics.line(width/2 + height/3 - 10, height/2, width/2 + height/3, height/2)     
-    love.graphics.printf("N", width/2 - 8, height/6 + 10, 50, "left")
-    love.graphics.printf("S", width/2 - 8, 5*height/6 - 35, 50, "left")
-    love.graphics.printf("W", width/2 - height/3 + 12, height/2 - 12, 50, "left")
-    love.graphics.printf("E", width/2 + height/3 - 30, height/2 - 12, 50, "left")
+    love.graphics.printf("N", width/2 - lineheight/4, height/6 + 10, 50, "left")
+    love.graphics.printf("S", width/2 - lineheight/4, 5*height/6 - lineheight - 10, 50, "left")
+    love.graphics.printf("W", width/2 - height/3 + 12, height/2 - lineheight/2, 50, "left")
+    love.graphics.printf("E", width/2 + height/3 - 0.5*lineheight - 10, height/2 - lineheight/2, 50, "left")
 end
 
 function drawSonar()
