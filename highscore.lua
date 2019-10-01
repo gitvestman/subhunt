@@ -20,6 +20,7 @@ function highscore.load()
         400,
         function ()
             highscorestate = "done"
+            love.keyboard.setTextInput( false )
         end
     )
 end
@@ -103,6 +104,7 @@ function CheckHighScore()
     end
     if score > 0 and (#HighScores < 10 or score > HighScores[10][2]) then
         highscorestate = "input"
+        love.keyboard.setTextInput( true )
     elseif (#HighScores) > 1 then
         highscorestate = "highscores"
         restarttime = time
