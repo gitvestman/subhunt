@@ -425,7 +425,7 @@ function checkKeyboard(dt)
 end
 
 function pointInRange(x, y, targetx, targety, width) 
-    return (x-targetx < width and x-targetx > 0 and y - targety < lineheight and y - targety > 0)
+    return (x-targetx < width + lineheight/2 and x-targetx > -lineheight/2 and y - targety < 2*lineheight and y - targety > -lineheight/2)
 end
 
 function love.mousepressed( x, y, button, istouch )
