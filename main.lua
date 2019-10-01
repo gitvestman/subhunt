@@ -14,7 +14,7 @@ function love.load()
     width = love.graphics.getWidth()
     height = love.graphics.getHeight()
     mainFont = love.graphics.newFont(height/21)
-    smallFont = love.graphics.newFont(height/32)
+    smallFont = love.graphics.newFont(height/30)
     lineheight = height/25
     sonarSound = love.audio.newSource("12677__peter-gross__sonar-pings.ogg", "static")
     torpedoSound = love.audio.newSource("327990__bymax__processed-swish-swoosh-whoosh.ogg", "static")
@@ -251,7 +251,7 @@ function drawMap()
     love.graphics.line(posx, posy-10*pulse, posx, posy-18*pulse-10)
     love.graphics.setLineWidth(1)
     love.graphics.setColor(0.1, 1.0, 0.1) 
-    love.graphics.printf("Press Enter to start", 3*width/8, height/2 + mapHeight/2 + lineheight, 2*width/8, "center")
+    love.graphics.printf("Click to start", 3*width/8, height/2 + mapHeight/2 + lineheight, 2*width/8, "center")
 end
 
 -- gradient_shader = love.graphics.newShader([[
@@ -285,9 +285,9 @@ function love.draw()
     -- love.graphics.printf(math.floor(differential*10)/10, 290, 80, 100, "left")
     -- love.graphics.printf(math.floor(framerate*10)/10, 500, 10, 100, "left")
     love.graphics.printf("Score:", 5*width/6-30, 10, 150, "left")
-    love.graphics.printf(score, 5*width/6 + lineheight*2, 10, lineheight * 2, "right")
+    love.graphics.printf(score, 5*width/6 + lineheight*4, 10, lineheight * 2, "right")
     love.graphics.printf("Remaining:", 5*width/6-30, lineheight + 15, 150, "left")
-    love.graphics.printf(level - kills, 5*width/6 + lineheight*2, lineheight + 15, lineheight * 2 , "right")
+    love.graphics.printf(level - kills, 5*width/6 + lineheight*4, lineheight + 15, lineheight * 2 , "right")
     drawControlPanel()
     drawSpeed(player.speed)
     drawThrust(player.thrust)
@@ -312,7 +312,7 @@ function love.draw()
         love.graphics.printf("Game Over", width/2 - 150, 1*height/3, 300, "center")
         love.graphics.setFont(smallFont)
         if (finalCountdown <= 0) then
-            love.graphics.printf("Press Enter to start over", width/2 - 150, 1*height/3 + 50, 300, "center")
+            love.graphics.printf("Click to start over", width/2 - 150, 1*height/3 + 50, 300, "center")
         end
     elseif #enemies == 0 and kills >= level and finalCountdown < 3 then
         love.graphics.setFont(mainFont)
@@ -390,23 +390,42 @@ function checkKeyboard(dt)
     if love.mouse.isDown(1) then
         local x = love.mouse.getX()
         local y = love.mouse.getY()
-        if pointInRange(x, y, 14*width/40, 5*height/6 + 40, 40) then
+        if pointInRange(x, y, 14*width/40, 5*height/6 + lineheight, 2*lineheight) then
             player.rudder = player.rudder + dt * 0.4
             if (player.rudder > 1) then 
                 player.rudder = 1
             end
         end
-        if pointInRange(x, y, 24*width/40+15, 5*height/6 + 40, 40) then
+        if pointInRange(x, y, 24*width/40+15, 5*height/6 + lineheight, 2*lineheight) then
             player.rudder = player.rudder - dt * 0.4
             if (player.rudder < -1) then 
                 player.rudder = -1
             end
         end
+        if pointInRange(x, y, 38*width/40+4, height/6 + lineheight, 2*lineheight) and player.thrust < 20 then
+            player.thrust = player.thrust + dt * 3
+            fullstop = false
+            if (player.thrust > 20) then 
+                player.thrust = 20
+            end
+        end
+        if pointInRange(x, y, 38*width/40+4, 4*height/6 + 1.5*lineheight, 2*lineheight) and (player.thrust > 0 or fullstop) then
+            player.thrust = player.thrust - dt * 3
+            if not fullstop and player.thrust < 0 then 
+                player.thrust = 0
+            end
+            if fullstop and player.thrust < -20 then 
+                player.thrust = -20
+            end
+        end
+        if not pointInRange(x, y, 38*width/40+4, 4*height/6 + 1.5*lineheight, 2*lineheight) and player.thrust == 0 then
+            fullstop = true
+        end
     end
 end
 
 function pointInRange(x, y, targetx, targety, width) 
-    return (x-targetx < width and x-targetx > 0 and y - targety < 20 and y - targety > 0)
+    return (x-targetx < width and x-targetx > 0 and y - targety < lineheight and y - targety > 0)
 end
 
 function love.mousepressed( x, y, button, istouch )
@@ -414,12 +433,12 @@ function love.mousepressed( x, y, button, istouch )
         showMap = false;
         return
     end
-    if pointInRange(x, y, 24.5*width/40, 5*height/6, 150) then
+    if pointInRange(x, y, 25*width/40, height/6, lineheight*5) then
         if player.torpedoloading <= 0 then
             fireTorpedo(player)
         end
     end
-    if pointInRange(x, y, 10*width/40, 5*height/6, 150) then
+    if pointInRange(x, y, 10*width/40, height/6, lineheight*5) then
         if not sonar.active then
             sonar = {active = true, time = time}
             sonarSound:play()
