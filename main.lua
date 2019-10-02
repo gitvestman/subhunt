@@ -27,7 +27,7 @@ function love.load()
     score = 0
     kills = 0
     level = 1
-    displayScale = height/4000
+    displayScale = height/3500
     player = {x = 0, y = 0, 
             speed = 10, thrust = 10, heading = 0, rudder = 0, 
             torpedoloading = 0, type = "player" }
@@ -354,6 +354,40 @@ function moveSubmarine(dt, submarine)
     end
 end
 
+function handleTouch(x, y, dt)
+    if pointInRange(x, y, 14*width/40, 5*height/6 + lineheight, 2*lineheight) then
+        player.rudder = player.rudder + dt * 0.4
+        if (player.rudder > 1) then 
+            player.rudder = 1
+        end
+    end
+    if pointInRange(x, y, 24*width/40+15, 5*height/6 + lineheight, 2*lineheight) then
+        player.rudder = player.rudder - dt * 0.4
+        if (player.rudder < -1) then 
+            player.rudder = -1
+        end
+    end
+    if pointInRange(x, y, 38*width/40+4, height/6 + lineheight, 2*lineheight) and player.thrust < 20 then
+        player.thrust = player.thrust + dt * 3
+        fullstop = false
+        if (player.thrust > 20) then 
+            player.thrust = 20
+        end
+    end
+    if pointInRange(x, y, 38*width/40+4, 4*height/6 + 1.5*lineheight, 2*lineheight) and (player.thrust > 0 or fullstop) then
+        player.thrust = player.thrust - dt * 3
+        if not fullstop and player.thrust < 0 then 
+            player.thrust = 0
+        end
+        if fullstop and player.thrust < -20 then 
+            player.thrust = -20
+        end
+    end
+    if not pointInRange(x, y, 38*width/40+4, 4*height/6 + 1.5*lineheight, 2*lineheight) and player.thrust == 0 then
+        fullstop = true
+    end
+end
+
 function checkKeyboard(dt)
 
     if love.keyboard.isDown("up", "w") and player.thrust < 20 then
@@ -387,40 +421,15 @@ function checkKeyboard(dt)
             player.rudder = 1
         end
     end
-    if love.mouse.isDown(1) then
+    touches = love.touch.getTouches()
+    if #touches > 0 then
+        for i,touch in ipairs(touches, dt) do
+            handleTouch(love.touch.getPosition(touch))
+        end
+    elseif love.mouse.isDown(1) then
         local x = love.mouse.getX()
         local y = love.mouse.getY()
-        if pointInRange(x, y, 14*width/40, 5*height/6 + lineheight, 2*lineheight) then
-            player.rudder = player.rudder + dt * 0.4
-            if (player.rudder > 1) then 
-                player.rudder = 1
-            end
-        end
-        if pointInRange(x, y, 24*width/40+15, 5*height/6 + lineheight, 2*lineheight) then
-            player.rudder = player.rudder - dt * 0.4
-            if (player.rudder < -1) then 
-                player.rudder = -1
-            end
-        end
-        if pointInRange(x, y, 38*width/40+4, height/6 + lineheight, 2*lineheight) and player.thrust < 20 then
-            player.thrust = player.thrust + dt * 3
-            fullstop = false
-            if (player.thrust > 20) then 
-                player.thrust = 20
-            end
-        end
-        if pointInRange(x, y, 38*width/40+4, 4*height/6 + 1.5*lineheight, 2*lineheight) and (player.thrust > 0 or fullstop) then
-            player.thrust = player.thrust - dt * 3
-            if not fullstop and player.thrust < 0 then 
-                player.thrust = 0
-            end
-            if fullstop and player.thrust < -20 then 
-                player.thrust = -20
-            end
-        end
-        if not pointInRange(x, y, 38*width/40+4, 4*height/6 + 1.5*lineheight, 2*lineheight) and player.thrust == 0 then
-            fullstop = true
-        end
+        handleTouch(x, y, dt)
     end
 end
 
@@ -433,12 +442,12 @@ function love.mousepressed( x, y, button, istouch )
         showMap = false;
         return
     end
-    if pointInRange(x, y, 25*width/40, height/6, lineheight*5) then
+    if pointInRange(x, y, 25*width/40, lineheight, lineheight*5) then
         if player.torpedoloading <= 0 then
             fireTorpedo(player)
         end
     end
-    if pointInRange(x, y, 10*width/40, height/6, lineheight*5) then
+    if pointInRange(x, y, 10*width/40, lineheight, lineheight*5) then
         if not sonar.active then
             sonar = {active = true, time = time}
             sonarSound:play()

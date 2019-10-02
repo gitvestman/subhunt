@@ -1,11 +1,16 @@
 function drawControlPanel()
+    displayCenterX = width/2
+    displayCenterY = height/2-height/15
+    displayRadius = 0.4*height
     love.graphics.setFont(smallFont)
     love.graphics.setBackgroundColor(0.1, 0.2, 0.1) 
     world = love.physics.newWorld(0, 9.81*64, true)
     love.graphics.setColor(0.05, 0.1, 0.05) 
-    love.graphics.circle("fill", width/2, height/2, height/3)
+    love.graphics.circle("fill", displayCenterX, displayCenterY, displayRadius)
     love.graphics.setColor(0.0, 1.0, 0.0) 
-    love.graphics.circle("line", width/2, height/2, height/3)
+    love.graphics.setLineWidth(2)
+    love.graphics.circle("line", displayCenterX, displayCenterY, displayRadius)
+    love.graphics.setLineWidth(1)
     love.graphics.rectangle("line", width/20, height/6, 7*width/40, 4*height/6)
     love.graphics.setColor(0.1, 0.3, 0.1) 
     love.graphics.rectangle("fill", width/20+1, height/6 + 1.5 * lineheight, 7*width/40-2, 3*height/6+lineheight)
@@ -26,18 +31,18 @@ function drawControlPanel()
     love.graphics.print("[R]", 38*width/40+4, 4*height/6 + 1.5*lineheight, 0, 1)
     love.graphics.line((width - 9*width/40) + 10, height/2, (width - 9*width/40), height/2)
     love.graphics.line(width/20, height/2, width/20+10, height/2)
-    love.graphics.rectangle("line", 10*width/40, height/6 - 1, lineheight*5, lineheight + 2)
-    love.graphics.printf("Sonar", 10*width/40, height/6, lineheight*5, "center")
+    love.graphics.rectangle("line", 10*width/40, lineheight - 2, lineheight*5, lineheight + 4)
+    love.graphics.printf("Sonar", 10*width/40, lineheight, lineheight*5, "center")
     --love.graphics.print("Sonar", 10*width/40, height/6, 0, 1)
     if (player.torpedoloading > 0) then
         love.graphics.setColor(0.1, 1.0, 0.1) 
-        love.graphics.setLineWidth(2)
-        love.graphics.line(25*width/40, height/6 + 30, 24.5*width/40 + width/50*(6 - player.torpedoloading), height/6 + 30)
+        love.graphics.setLineWidth(4)
+        love.graphics.line(25*width/40, lineheight + lineheight, 24.5*width/40 + width/50*(6 - player.torpedoloading), lineheight + lineheight)
         love.graphics.setLineWidth(1)
         love.graphics.setColor(0.1, 0.7, 0.1) 
     end
-    love.graphics.rectangle("line", 25*width/40, height/6 - 1, lineheight*5, lineheight + 2)
-    love.graphics.printf("Torpedo", 25*width/40, height/6, lineheight*5, "center")
+    love.graphics.rectangle("line", 25*width/40, lineheight - 2, lineheight*5, lineheight + 4)
+    love.graphics.printf("Torpedo", 25*width/40, lineheight, lineheight*5, "center")
     --love.graphics.print("Torpedo", 24.5*width/40, height/6, 0, 1)
     love.graphics.setColor(0.1, 1.0, 0.1) 
     love.graphics.print("[L]", 14*width/40, 5*height/6 + lineheight, 0, 1)
@@ -68,14 +73,14 @@ end
 
 function drawPlayer()
     if (player.dead) then
-        love.graphics.line(width/2-10, height/2-10, width/2+10, height/2+10)
-        love.graphics.line(width/2-10, height/2+10, width/2+10, height/2-10)
+        love.graphics.line(displayCenterX-10, displayCenterY-10, displayCenterX+10, displayCenterY+10)
+        love.graphics.line(displayCenterX-10, displayCenterY+10, displayCenterX+10, displayCenterY-10)
     else
         if (math.abs(player.thrust) > 6) then
-            love.graphics.ellipse("fill", width/2, height/2, height/150, height/70)
+            love.graphics.ellipse("fill", displayCenterX, displayCenterY, height/150, height/70)
             player.lastKnown = {x = player.x, y = player.y, speed = player.speed, heading = player.heading, time=time}
         else
-            love.graphics.ellipse("line", width/2, height/2, height/150, height/70)
+            love.graphics.ellipse("line", displayCenterX, displayCenterY, height/150, height/70)
         end
     end
 end
@@ -90,21 +95,21 @@ function drawMeter(value, min, max, step, xpos, align)
 end
 
 local function myStencilFunction()
-    love.graphics.circle("fill", width/2, height/2, height/3)
+    love.graphics.circle("fill", displayCenterX, displayCenterY, displayRadius)
 end
 
 function drawStencil(rotation)
     love.graphics.stencil(myStencilFunction, "replace", 1)
     love.graphics.setStencilTest("greater", 0)
-    love.graphics.translate(width/2, height/2)
+    love.graphics.translate(displayCenterX, displayCenterY)
     love.graphics.rotate(math.rad(rotation))
-    love.graphics.translate(-width/2, -height/2)
+    love.graphics.translate(-displayCenterX, -displayCenterY)
 end
 
 function endStencil(rotation)
-    love.graphics.translate(width/2, height/2)
+    love.graphics.translate(displayCenterX, displayCenterY)
     love.graphics.rotate(math.rad(-rotation))
-    love.graphics.translate(-width/2, -height/2)
+    love.graphics.translate(-displayCenterX, -displayCenterY)
     love.graphics.setStencilTest()
 end
 
@@ -127,8 +132,8 @@ function drawGrid(player)
     love.graphics.setColor(0.0, 0.5, 0.0) 
     local miny = math.floor((player.y + 2500)/1000)*1000
     local minx = math.floor((player.x + 2500)/1000)*1000
-    local minyc = (player.y - miny) * displayScale + height/2
-    local minxc = (player.x - minx) * displayScale + width/2
+    local minyc = (player.y - miny) * displayScale + displayCenterY
+    local minxc = (player.x - minx) * displayScale + displayCenterX
     for i = math.floor((player.y - 1500)/1000)*1000, math.floor((player.y+1500)/1000)*1000, 1000 do
         y = (player.y - i) * displayScale + height/2
         if y > height/6 and y <  5*height/6 then            
@@ -137,7 +142,7 @@ function drawGrid(player)
         end
     end
     for i = math.floor((player.x - 1500)/1000)*1000, math.floor((player.x+1500)/1000)*1000, 1000 do
-        x = (player.x - i) * displayScale + width/2
+        x = (player.x - i) * displayScale + displayCenterX
         if x > width/6 and x <  5*width/6 then            
             dashLine({x=x, y=minyc}, {x=x, y=minyc + height}, 5, 5)
         end
@@ -149,14 +154,14 @@ function drawCompass(rotation)
     -- love.graphics.translate(width/2, height/2)
     -- love.graphics.rotate(math.rad(rotation))
     -- love.graphics.translate(-width/2, -height/2)
-    love.graphics.line(width/2, height/6, width/2, height/6+10)     
-    love.graphics.line(width/2, 5*height/6, width/2, 5*height/6-10)     
-    love.graphics.line(width/2 - height/3, height/2, width/2 - height/3 + 10, height/2)     
-    love.graphics.line(width/2 + height/3 - 10, height/2, width/2 + height/3, height/2)     
-    love.graphics.printf("N", width/2 - lineheight/4, height/6 + 10, 50, "left")
-    love.graphics.printf("S", width/2 - lineheight/4, 5*height/6 - lineheight - 10, 50, "left")
-    love.graphics.printf("W", width/2 - height/3 + 12, height/2 - lineheight/2, 50, "left")
-    love.graphics.printf("E", width/2 + height/3 - 0.5*lineheight - 10, height/2 - lineheight/2, 50, "left")
+    love.graphics.line(displayCenterX, displayCenterY - displayRadius, displayCenterX, displayCenterY - displayRadius+10)     
+    love.graphics.line(displayCenterX, displayCenterY + displayRadius, displayCenterX, displayCenterY + displayRadius-10)     
+    love.graphics.line(displayCenterX - displayRadius, displayCenterY, displayCenterX - displayRadius + 10, displayCenterY)     
+    love.graphics.line(displayCenterX + displayRadius - 10, displayCenterY, displayCenterX + displayRadius, displayCenterY)     
+    love.graphics.printf("N", displayCenterX - lineheight/4, displayCenterY - displayRadius + 10, 50, "left")
+    love.graphics.printf("S", displayCenterX - lineheight/4, displayCenterY + displayRadius - lineheight - 10, 50, "left")
+    love.graphics.printf("W", displayCenterX - displayRadius + 12, displayCenterY - lineheight/2, 50, "left")
+    love.graphics.printf("E", displayCenterX + displayRadius - 0.5*lineheight - 10, displayCenterY - lineheight/2, 50, "left")
 end
 
 function drawSonar()
@@ -168,8 +173,8 @@ function drawSonar()
                 if (enemy.dead) then 
                     return
                 end
-                local posx = (player.x - enemy.x) * displayScale + width/2	
-                local posy = (player.y - enemy.y) * displayScale + height/2
+                local posx = (player.x - enemy.x) * displayScale + displayCenterX	
+                local posy = (player.y - enemy.y) * displayScale + displayCenterY
                 if checkOnDisplay(posx, posy) then
                     enemy.lastKnown = {x = enemy.x, y = enemy.y, speed = enemy.speed, heading = enemy.heading, time=time}
                 end
@@ -177,7 +182,7 @@ function drawSonar()
             player.lastKnown = {x = player.x, y = player.y, speed = player.speed, heading = player.heading, time=time}
         end
         love.graphics.setColor(0.0, 1.0, 0.0) 
-        love.graphics.circle("line", width/2, height/2, math.fmod((time - sonar.time)/2, 1) * height/3)
+        love.graphics.circle("line", displayCenterX, displayCenterY, math.fmod((time - sonar.time)/2, 1) * displayRadius)
     end
 end
 
@@ -185,8 +190,8 @@ function drawExplosions()
     for i=1, #explosions do
         love.graphics.printf(math.floor(time - explosions[i].time*10)/10, 30, 80, 100, "left")
         if (time - explosions[i].time) < 2 then
-            posx = (player.x - explosions[i].x) * displayScale + width/2
-            posy = (player.y - explosions[i].y) * displayScale + height/2
+            posx = (player.x - explosions[i].x) * displayScale + displayCenterX
+            posy = (player.y - explosions[i].y) * displayScale + displayCenterY
             love.graphics.setColor(0.7, 0.3, 0.1) 
             love.graphics.circle("line", posx, posy, (time - explosions[i].time)*height/10)
             love.graphics.setColor(0.1, 1.0, 0.1) 
@@ -224,8 +229,8 @@ function drawTorpedos()
                 end
             end
 
-            posx = (player.x - calcx) * displayScale + width/2
-            posy = (player.y - calcy) * displayScale + height/2
+            posx = (player.x - calcx) * displayScale + displayCenterX
+            posy = (player.y - calcy) * displayScale + displayCenterY
 
             if torpedo.speed > 0 and checkOnDisplay(posx, posy) then
                 enemyTorpedo = enemyTorpedo or torpedo.source.type == "enemy"
@@ -253,8 +258,8 @@ function targetHit(target, x, y, i)
 end
 
 function drawDot(mode, x, y, r, h)
-    posx = (player.x - x) * displayScale + width/2
-    posy = (player.y - y) * displayScale + height/2
+    posx = (player.x - x) * displayScale + displayCenterX
+    posy = (player.y - y) * displayScale + displayCenterY
     if checkOnDisplay(posx, posy) then
         --love.graphics.circle(mode, posx, posy, r)
         love.graphics.translate(posx, posy)
@@ -296,10 +301,10 @@ function drawEnemies()
             love.graphics.setColor(0.1, 1.0 * pulse, 0.1) 
             drawDot("line", calcx, calcy, height/100 * pulse/2 + height/90, enemy.lastKnown.heading)
 
-            cpx = (player.x - calcx) * displayScale + width/2
-            cpy = (player.y - calcy) * displayScale + height/2        
-            lpx = (player.x - enemy.lastKnown.x) * displayScale + width/2
-            lpy = (player.y - enemy.lastKnown.y) * displayScale + height/2
+            cpx = (player.x - calcx) * displayScale + displayCenterX
+            cpy = (player.y - calcy) * displayScale + displayCenterY       
+            lpx = (player.x - enemy.lastKnown.x) * displayScale + displayCenterX
+            lpy = (player.y - enemy.lastKnown.y) * displayScale + displayCenterY
             
             dashLine({x=lpx, y=lpy}, {x=cpx, y=cpy}, 10, 10)
         end
@@ -308,7 +313,7 @@ function drawEnemies()
 end
 
 function checkOnDisplay(ax, ay)
-    local dx = width/2 - ax
-	local dy = height/2 - ay
-	return dx^2 + dy^2 < ((height/3)^2)
+    local dx = displayCenterX - ax
+	local dy = displayCenterY - ay
+	return dx^2 + dy^2 < ((displayRadius)^2)
 end
