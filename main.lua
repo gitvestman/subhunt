@@ -13,8 +13,8 @@ function love.load()
     love.math.setRandomSeed(1337)
     width = love.graphics.getWidth()
     height = love.graphics.getHeight()
-    mainFont = love.graphics.newFont(height/21)
-    smallFont = love.graphics.newFont(height/30)
+    mainFont = love.graphics.newFont(height/22)
+    smallFont = love.graphics.newFont(height/28)
     lineheight = height/25
     sonarSound = love.audio.newSource("12677__peter-gross__sonar-pings.ogg", "static")
     torpedoSound = love.audio.newSource("327990__bymax__processed-swish-swoosh-whoosh.ogg", "static")
@@ -236,9 +236,9 @@ function drawMap()
     love.graphics.draw(map, width/2 - mapWidth/2, height/2 - mapHeight/2 + lineheight, 0, scale)
     local target = targets[((level - 1) % #targets) + 1]
     love.graphics.setFont(mainFont)
-    love.graphics.printf("MISSION: "..target.name, 2*width/8,  height/2 - mapHeight/2 - 2 * lineheight + 10, 4*width/8, "center")
+    love.graphics.printf("MISSION: "..target.name, 2*width/8,  height/2 - mapHeight/2 - 2 * lineheight + 5, 4*width/8, "center")
     love.graphics.setFont(smallFont)
-    love.graphics.printf("Search and destroy "..tostring(level).." vessels", 2*width/8, height/2 - mapHeight/2, 4*width/8, "center")
+    love.graphics.printf("Search and destroy "..tostring(level).." vessels", 2*width/8, height/2 - mapHeight/2 - 2, 4*width/8, "center")
     local pulse = (math.sin(time*5)/4 + 0.75) * 2
     local colorpulse = math.sin(time*20)/4 +0.75
     love.graphics.setColor(0.1, 1.0*colorpulse, 0.1) 
@@ -355,26 +355,29 @@ function moveSubmarine(dt, submarine)
 end
 
 function handleTouch(x, y, dt)
-    if pointInRange(x, y, 14*width/40, 5*height/6 + lineheight, 2*lineheight) then
+    print("handleTouch "..x..", "..y)
+    rudderhalfwidth = 4*width/40
+    rudderx = player.rudder*6*height/40
+    if pointInRange(x, y, 14*width/40, 5*height/6 + lineheight, 2*lineheight + rudderhalfwidth - rudderx) then
         player.rudder = player.rudder + dt * 0.4
         if (player.rudder > 1) then 
             player.rudder = 1
         end
     end
-    if pointInRange(x, y, 24*width/40+15, 5*height/6 + lineheight, 2*lineheight) then
+    if pointInRange(x, y, width/2 - rudderx, 5*height/6 + lineheight, 2*lineheight + rudderhalfwidth + rudderx ) then
         player.rudder = player.rudder - dt * 0.4
         if (player.rudder < -1) then 
             player.rudder = -1
         end
     end
-    if pointInRange(x, y, 38*width/40+4, height/6 + lineheight, 2*lineheight) and player.thrust < 20 then
+    if pointInRange(x, y, 34.5*width/40+4, height/6 + lineheight, 5*lineheight) and player.thrust < 20 then
         player.thrust = player.thrust + dt * 3
         fullstop = false
         if (player.thrust > 20) then 
             player.thrust = 20
         end
     end
-    if pointInRange(x, y, 38*width/40+4, 4*height/6 + 1.5*lineheight, 2*lineheight) and (player.thrust > 0 or fullstop) then
+    if pointInRange(x, y, 34.5*width/40+4, 4*height/6 + 1.5*lineheight, 5*lineheight) and (player.thrust > 0 or fullstop) then
         player.thrust = player.thrust - dt * 3
         if not fullstop and player.thrust < 0 then 
             player.thrust = 0
@@ -424,7 +427,8 @@ function checkKeyboard(dt)
     touches = love.touch.getTouches()
     if #touches > 0 then
         for i,touch in ipairs(touches, dt) do
-            handleTouch(love.touch.getPosition(touch))
+            local x, y = love.touch.getPosition(touch)
+            handleTouch(x, y, dt)
         end
     elseif love.mouse.isDown(1) then
         local x = love.mouse.getX()

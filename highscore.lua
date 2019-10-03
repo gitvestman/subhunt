@@ -61,7 +61,9 @@ function highscore.draw()
         love.graphics.setColor(0.1, 1.0, 0.1) 
         love.graphics.rectangle("line", width/4 , height/2-6*lineheight, width/2, 13*lineheight) 
         texty = height/2-5*lineheight
-        love.graphics.printf("Hall of fame", width/4 + lineheight, texty ,300)
+        love.graphics.setFont(mainFont)
+        love.graphics.printf("Hall of fame", width/4 + lineheight, texty - 2 ,300)
+        love.graphics.setFont(smallFont)
         texty = texty + lineheight + 10
         for i,v in ipairs(HighScores) do 
             if i < 10 then
