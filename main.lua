@@ -95,7 +95,7 @@ function love.update(dt)
             if (kills >= level) then 
                 newLevel()
             else
-                if (math.mod(level, 2) == 1 and kills == level - 2) then
+                if ((level % 2) == 1 and kills == level - 2) then
                     spawnNewEnemy()
                 elseif (level > 5 and kills == level - 3) then
                     spawnNewEnemy()
@@ -175,7 +175,7 @@ function enemyAi(dt, enemy, player)
     local actualenemydistance = math.sqrt((enemy.x - player.x)^2 + (enemy.y - player.y)^2)
     local enemyangle = math.deg(math.atan2(enemy.x - calcx, enemy.y - calcy))
     local enemyhitangle = math.deg(math.atan2(100, enemydistance)) + math.max(12 - level*2, 0)
-    local differential = math.mod(enemyangle - enemy.heading - 180, 360)
+    local differential = (enemyangle - enemy.heading - 180) % 360
 
     if actualenemydistance < 50 then
         createExplosion(player.x, player.y)
@@ -234,7 +234,7 @@ function drawMap()
     love.graphics.setColor(0.1, 1.0, 0.1) 
     love.graphics.rectangle("line", width/2 - mapWidth/2, height/2 - mapHeight/2 - 2 * lineheight, mapWidth, mapHeight + 4 * lineheight)
     love.graphics.draw(map, width/2 - mapWidth/2, height/2 - mapHeight/2 + lineheight, 0, scale)
-    local target = targets[math.mod(level - 1, #targets) + 1]
+    local target = targets[((level - 1) % #targets) + 1]
     love.graphics.setFont(mainFont)
     love.graphics.printf("MISSION: "..target.name, 2*width/8,  height/2 - mapHeight/2 - 2 * lineheight + 10, 4*width/8, "center")
     love.graphics.setFont(smallFont)
@@ -254,14 +254,14 @@ function drawMap()
     love.graphics.printf("Press Enter to start", 3*width/8, height/2 + mapHeight/2 + lineheight, 2*width/8, "center")
 end
 
-gradient_shader = love.graphics.newShader([[
-    extern number startpos = 0;
-    vec4 effect ( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords ) {
-        vec4 pixel = Texel(texture, texture_coords );
-        float factor = sin(startpos + 3*screen_coords.x/love_ScreenSize.x);
-        return vec4(1.0, 0.1, 0.1, 0.15*factor);      
-    }  
-]])
+-- gradient_shader = love.graphics.newShader([[
+--     extern number startpos = 0;
+--     vec4 effect ( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords ) {
+--         vec4 pixel = Texel(texture, texture_coords );
+--         float factor = sin(startpos + 3*screen_coords.x/love_ScreenSize.x);
+--         return vec4(1.0, 0.1, 0.1, 0.15*factor);      
+--     }  
+-- ]])
 
 function love.draw()
     -- love.graphics.printf("X", 10, 10, 100, "left")
@@ -324,12 +324,12 @@ function love.draw()
     end
     highscore.draw()
     if enemyTorpedo and #enemies > 0 then
-        love.graphics.setColor(0.1, 0.3, 0.1) 
-        gradient_shader:send("startpos",6*time)
-        love.graphics.setShader(gradient_shader)
-        love.graphics.rectangle("fill", 0, 0, width, height) 
-        love.graphics.setShader()
-        love.graphics.setColor(0.1, 1.0, 0.1) 
+        -- love.graphics.setColor(0.1, 0.3, 0.1) 
+        -- gradient_shader:send("startpos",6*time)
+        -- love.graphics.setShader(gradient_shader)
+        -- love.graphics.rectangle("fill", 0, 0, width, height) 
+        -- love.graphics.setShader()
+        -- love.graphics.setColor(0.1, 1.0, 0.1) 
     end
 end
 
@@ -387,6 +387,43 @@ function checkKeyboard(dt)
             player.rudder = 1
         end
     end
+    if love.mouse.isDown(1) then
+        local x = love.mouse.getX()
+        local y = love.mouse.getY()
+        if pointInRange(x, y, 14*width/40, 5*height/6 + 40, 40) then
+            player.rudder = player.rudder + dt * 0.4
+            if (player.rudder > 1) then 
+                player.rudder = 1
+            end
+        end
+        if pointInRange(x, y, 24*width/40+15, 5*height/6 + 40, 40) then
+            player.rudder = player.rudder - dt * 0.4
+            if (player.rudder < -1) then 
+                player.rudder = -1
+            end
+        end
+    end
+end
 
+function pointInRange(x, y, targetx, targety, width) 
+    return (x-targetx < width and x-targetx > 0 and y - targety < 20 and y - targety > 0)
+end
+
+function love.mousepressed( x, y, button, istouch )
+    if showMap and time > 1 then
+        showMap = false;
+        return
+    end
+    if pointInRange(x, y, 24.5*width/40, 5*height/6, 150) then
+        if player.torpedoloading <= 0 then
+            fireTorpedo(player)
+        end
+    end
+    if pointInRange(x, y, 10*width/40, 5*height/6, 150) then
+        if not sonar.active then
+            sonar = {active = true, time = time}
+            sonarSound:play()
+        end
+    end 
 end
 
