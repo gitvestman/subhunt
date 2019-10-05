@@ -26,7 +26,7 @@ function love.load()
     time = 0
     score = 0
     kills = 0
-    level = 1
+    level = 0
     displayScale = height/3500
     player = {x = 0, y = 0, 
             speed = 10, thrust = 10, heading = 0, rudder = 0, 
@@ -132,7 +132,12 @@ function love.keypressed(key)
         return
     end
     if showMap and (key == "space" or key == "return") and time > 1 then
-        showMap = false;
+        if (level == 0) then 
+            level = 1
+            time = 0
+        else
+            showMap = false;
+        end
         return
     end
     if key == 'q' and not sonar.active then
@@ -229,22 +234,36 @@ function drawMap()
     local scale = math.min(width/map:getWidth() * 3/4, height/map:getHeight() * 3/5)
     local mapHeight = map:getHeight()*scale
     local mapWidth = map:getWidth()*scale
+    local mapX = width/2 - mapWidth/2
+    local mapY = height/2 - mapHeight/2
     love.graphics.setColor(0.1, 0.3, 0.1) 
-    love.graphics.rectangle("fill", width/2 - mapWidth/2, height/2 - mapHeight/2 - 2 * lineheight, mapWidth, mapHeight + 4 * lineheight)
+    love.graphics.rectangle("fill", mapX, mapY - 2 * lineheight, mapWidth, mapHeight + 4 * lineheight)
     love.graphics.setColor(0.1, 1.0, 0.1) 
-    love.graphics.rectangle("line", width/2 - mapWidth/2, height/2 - mapHeight/2 - 2 * lineheight, mapWidth, mapHeight + 4 * lineheight)
-    love.graphics.draw(map, width/2 - mapWidth/2, height/2 - mapHeight/2 + lineheight, 0, scale)
+    love.graphics.rectangle("line", mapX, mapY - 2 * lineheight, mapWidth, mapHeight + 4 * lineheight)
+    if (level == 0) then
+        love.graphics.setFont(mainFont)
+        love.graphics.printf("Welcome Lieutenant!", mapX + lineheight,  mapY - lineheight, 5*width/8 - lineheight, "left")
+        love.graphics.setFont(smallFont)
+        love.graphics.printf("You have been assigned a submarine with a crew.\nThis submarine has "..
+        "a sonar system that can detect engine noise from enemy submarines, as well as send out "..
+        "a sonar pulse to detect submarines running their engines in stealth mode."..
+        " The last know position of a submarine as well as the projected position of the submarine is shown on screen.\n"..
+        "The enemy has the same equipment. Your engine noise and sonar will give you away as well as firing a torpedo."..
+        " Use your wits and you can defeat the enemy and advance in rank.\n\nGood Luck!" , mapX + lineheight, mapY + lineheight, 5*width/8 - lineheight, "left")
+        return
+    end
+    love.graphics.draw(map, mapX, mapY + lineheight, 0, scale)
     local target = targets[((level - 1) % #targets) + 1]
     love.graphics.setFont(mainFont)
-    love.graphics.printf("MISSION: "..target.name, 2*width/8,  height/2 - mapHeight/2 - 2 * lineheight + 5, 4*width/8, "center")
+    love.graphics.printf("MISSION: "..target.name, 2*width/8,  mapY - 2 * lineheight + 5, 4*width/8, "center")
     love.graphics.setFont(smallFont)
-    love.graphics.printf("Search and destroy "..tostring(level).." vessels", 2*width/8, height/2 - mapHeight/2 - 2, 4*width/8, "center")
+    love.graphics.printf("Search and destroy "..tostring(level).." vessels", 2*width/8, mapY - 2, 4*width/8, "center")
     local pulse = (math.sin(time*5)/4 + 0.75) * 2
     local colorpulse = math.sin(time*20)/4 +0.75
     love.graphics.setColor(0.1, 1.0*colorpulse, 0.1) 
     love.graphics.setLineWidth(3)
-    local posx = target.x * scale * map:getWidth()/1280 + width/2 - mapWidth/2
-    local posy = target.y * scale * map:getWidth()/1280 + height/2 - mapHeight/2 + lineheight
+    local posx = target.x * scale * map:getWidth()/1280 + mapX
+    local posy = target.y * scale * map:getWidth()/1280 + mapY + lineheight
     love.graphics.line(posx-10*pulse, posy, posx-18*pulse-10, posy)
     love.graphics.line(posx+10*pulse, posy, posx+18*pulse+10, posy)
     love.graphics.line(posx, posy+10*pulse, posx, posy+18*pulse + 10)
@@ -355,7 +374,6 @@ function moveSubmarine(dt, submarine)
 end
 
 function handleTouch(x, y, dt)
-    print("handleTouch "..x..", "..y)
     rudderhalfwidth = 4*width/40
     rudderx = player.rudder*6*height/40
     if pointInRange(x, y, 14*width/40, 5*height/6 + lineheight, 2*lineheight + rudderhalfwidth - rudderx) then
@@ -443,7 +461,12 @@ end
 
 function love.mousepressed( x, y, button, istouch )
     if showMap and time > 1 then
-        showMap = false;
+        if (level == 0) then 
+            level = 1
+            time = 0
+        else
+            showMap = false;
+        end
         return
     end
     if pointInRange(x, y, 25*width/40, lineheight, lineheight*5) then
