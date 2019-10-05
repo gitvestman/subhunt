@@ -14,8 +14,8 @@ function love.load()
     width = love.graphics.getWidth()
     height = love.graphics.getHeight()
     size = math.min(height, 0.68*width)
-    mainFont = love.graphics.newFont(size/22)
-    smallFont = love.graphics.newFont(size/28)
+    mainFont = love.graphics.newFont(width/32)
+    smallFont = love.graphics.newFont(width/44)
     lineheight = height/25
     sonarSound = love.audio.newSource("12677__peter-gross__sonar-pings.ogg", "static")
     torpedoSound = love.audio.newSource("327990__bymax__processed-swish-swoosh-whoosh.ogg", "static")
@@ -246,23 +246,24 @@ function drawMap()
     love.graphics.rectangle("line", mapX, mapY - 2 * lineheight, mapWidth, mapHeight + 4 * lineheight)
     if (getRank(score) ~= currentRank) then
         love.graphics.setFont(mainFont)
-        love.graphics.printf("Well done!\n\nYou have been promoted to "..getRank(score), mapX + lineheight, height/2, 5*width/8 - lineheight, "center")
+        love.graphics.printf("Well done!\n\nYou have been promoted to "..getRank(score), mapX + lineheight, height/2 - 4*lineheight, mapWidth - 2*lineheight, "center")
         love.graphics.setFont(smallFont)
         return
     end
     if (level == 0) then
         love.graphics.setFont(mainFont)
-        love.graphics.printf("Welcome Lieutenant!", mapX + lineheight,  mapY - lineheight, 5*width/8 - lineheight, "left")
+        love.graphics.printf("Welcome Lieutenant!", mapX + lineheight,  mapY - 1.5*lineheight, mapWidth - 2*lineheight, "left")
         love.graphics.setFont(smallFont)
-        love.graphics.printf("You have been assigned a submarine with a crew.\nThis submarine has "..
+        love.graphics.printf("You have been assigned a submarine with a crew. This submarine has "..
         "a sonar system that can detect engine noise from enemy submarines, as well as send out "..
         "a sonar pulse to detect submarines running their engines in stealth mode."..
         " On the screen the last know position of a submarine is shown. The last known heading and speed is also "..
-        "used to calculate and display a possible position.\n\n\n"..
+        "used to display a calculated position.\n\n\n"..
         "The enemy has the same equipment. Your engine noise and sonar will give you away as well as firing a torpedo."..
-        " Use your wits and you can defeat the enemy and advance in rank.\n\nGood Luck!" , mapX + lineheight, mapY + lineheight, 5*width/8 - lineheight, "left")
+        " Use your wits and you can defeat the enemy and advance in rank.\n\nGood Luck!" , mapX + lineheight, mapY + 0.5*lineheight, mapWidth - 2*lineheight, "left")
         local xpos = (time * 10) % (width/2)
-        local ypos = height/2 + lineheight
+        --print(mapHeight, mapWidth, mapHeight/mapWidth, mapWidth/mapHeight)
+        local ypos = height/2 + 0.5*lineheight
         love.graphics.ellipse("line", mapX + 4*lineheight, ypos, height/40, height/40/1.5, height/60)
         love.graphics.ellipse("line", mapX + 6*lineheight + xpos, ypos, height/40, height/40/1.5)
         dashLine({x=mapX + 4*lineheight, y=ypos}, {x=mapX + 6*lineheight + xpos, y=ypos}, 10, 10)
@@ -320,9 +321,9 @@ function love.draw()
     -- love.graphics.printf(math.floor(differential*10)/10, 290, 80, 100, "left")
     -- love.graphics.printf(math.floor(framerate*10)/10, 500, 10, 100, "left")
     love.graphics.printf("Score:", 4.5*width/6 + lineheight, 10, 150, "left")
-    love.graphics.printf(score, width - lineheight*3, 10, lineheight * 2, "right")
+    love.graphics.printf(score, width - lineheight*4, 10, lineheight * 3, "right")
     love.graphics.printf("Remaining:", 4.5*width/6 + lineheight, lineheight + 15, 150, "left")
-    love.graphics.printf(level - kills, width - lineheight*3, lineheight + 15, lineheight * 2 , "right")
+    love.graphics.printf(level - kills, width - lineheight*4, lineheight + 15, lineheight * 3 , "right")
     drawControlPanel()
     drawSpeed(player.speed)
     drawThrust(player.thrust)
