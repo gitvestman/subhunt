@@ -13,8 +13,9 @@ function love.load()
     love.math.setRandomSeed(1337)
     width = love.graphics.getWidth()
     height = love.graphics.getHeight()
-    mainFont = love.graphics.newFont(height/22)
-    smallFont = love.graphics.newFont(height/28)
+    size = math.min(height, 0.68*width)
+    mainFont = love.graphics.newFont(size/22)
+    smallFont = love.graphics.newFont(size/28)
     lineheight = height/25
     sonarSound = love.audio.newSource("12677__peter-gross__sonar-pings.ogg", "static")
     torpedoSound = love.audio.newSource("327990__bymax__processed-swish-swoosh-whoosh.ogg", "static")
@@ -95,9 +96,9 @@ function love.update(dt)
             if (kills >= level) then 
                 newLevel()
             else
-                if ((level % 2) == 1 and kills == level - 2) then
+                if (level > 2 and level < 5 and kills == level - 2) then
                     spawnNewEnemy()
-                elseif (level > 5 and kills == level - 3) then
+                elseif (level >= 5 and kills == level - 3) then
                     spawnNewEnemy()
                     spawnNewEnemy()
                 end
@@ -231,12 +232,12 @@ function fireTorpedo(submarine)
 end
 
 function drawMap()
-    local scale = math.min(width/map:getWidth() * 3/4, height/map:getHeight() * 3/5)
+    local scale = math.min(width/map:getWidth() * 3/4, height/map:getHeight() * 2/3)
     local mapHeight = map:getHeight()*scale
     local mapWidth = map:getWidth()*scale
     local mapX = width/2 - mapWidth/2
     local mapY = height/2 - mapHeight/2
-    love.graphics.setColor(0.1, 0.3, 0.1) 
+    love.graphics.setColor(0.1, 0.2, 0.1) 
     love.graphics.rectangle("fill", mapX, mapY - 2 * lineheight, mapWidth, mapHeight + 4 * lineheight)
     love.graphics.setColor(0.1, 1.0, 0.1) 
     love.graphics.rectangle("line", mapX, mapY - 2 * lineheight, mapWidth, mapHeight + 4 * lineheight)
@@ -303,10 +304,10 @@ function love.draw()
     -- love.graphics.printf("C", 260, 80, 100, "left")
     -- love.graphics.printf(math.floor(differential*10)/10, 290, 80, 100, "left")
     -- love.graphics.printf(math.floor(framerate*10)/10, 500, 10, 100, "left")
-    love.graphics.printf("Score:", 5*width/6-30, 10, 150, "left")
-    love.graphics.printf(score, 5*width/6 + lineheight*4, 10, lineheight * 2, "right")
-    love.graphics.printf("Remaining:", 5*width/6-30, lineheight + 15, 150, "left")
-    love.graphics.printf(level - kills, 5*width/6 + lineheight*4, lineheight + 15, lineheight * 2 , "right")
+    love.graphics.printf("Score:", 4.5*width/6 + lineheight, 10, 150, "left")
+    love.graphics.printf(score, width - lineheight*3, 10, lineheight * 2, "right")
+    love.graphics.printf("Remaining:", 4.5*width/6 + lineheight, lineheight + 15, 150, "left")
+    love.graphics.printf(level - kills, width - lineheight*3, lineheight + 15, lineheight * 2 , "right")
     drawControlPanel()
     drawSpeed(player.speed)
     drawThrust(player.thrust)
@@ -328,20 +329,20 @@ function love.draw()
     drawPlayer()
     if (player.dead and finalCountdown < 3) then
         love.graphics.setFont(mainFont)
-        love.graphics.printf("Game Over", width/2 - 150, 1*height/3, 300, "center")
+        love.graphics.printf("Game Over", width/2 - 150, height/4, 300, "center")
         love.graphics.setFont(smallFont)
         if (finalCountdown <= 0) then
-            love.graphics.printf("Click to start over", width/2 - 150, 1*height/3 + 50, 300, "center")
+            love.graphics.printf("Click to start over", width/2 - 150, height/4 + 50, 300, "center")
         end
     elseif #enemies == 0 and kills >= level and finalCountdown < 3 then
         love.graphics.setFont(mainFont)
-        love.graphics.printf("Mission Completed", width/2 - 150, 1*height/3, 300, "center")
+        love.graphics.printf("Mission Completed", width/2 - 150, height/4, 300, "center")
         love.graphics.setFont(smallFont)
     end
+    highscore.draw()
     if (showMap) then
         drawMap()
     end
-    highscore.draw()
     if enemyTorpedo and #enemies > 0 then
         -- love.graphics.setColor(0.1, 0.3, 0.1) 
         -- gradient_shader:send("startpos",6*time)
@@ -376,13 +377,13 @@ end
 function handleTouch(x, y, dt)
     rudderhalfwidth = 4*width/40
     rudderx = player.rudder*6*height/40
-    if pointInRange(x, y, 14*width/40, 5*height/6 + lineheight, 2*lineheight + rudderhalfwidth - rudderx) then
+    if pointInRange(x, y, 14*width/40 - lineheight, 5*height/6 + lineheight, 3*lineheight + rudderhalfwidth - rudderx) then
         player.rudder = player.rudder + dt * 0.4
         if (player.rudder > 1) then 
             player.rudder = 1
         end
     end
-    if pointInRange(x, y, width/2 - rudderx, 5*height/6 + lineheight, 2*lineheight + rudderhalfwidth + rudderx ) then
+    if pointInRange(x, y, width/2 - rudderx, 5*height/6 + lineheight, 3*lineheight + rudderhalfwidth + rudderx ) then
         player.rudder = player.rudder - dt * 0.4
         if (player.rudder < -1) then 
             player.rudder = -1

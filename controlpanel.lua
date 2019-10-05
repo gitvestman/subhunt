@@ -1,7 +1,7 @@
 function drawControlPanel()
+    displayRadius = math.min(0.4*height, 0.275*width)
     displayCenterX = width/2
-    displayCenterY = height/2-height/15
-    displayRadius = 0.4*height
+    displayCenterY = height - height/6 - displayRadius
     love.graphics.setFont(smallFont)
     love.graphics.setBackgroundColor(0.1, 0.2, 0.1) 
     world = love.physics.newWorld(0, 9.81*64, true)
@@ -33,18 +33,18 @@ function drawControlPanel()
     love.graphics.setFont(smallFont)
     love.graphics.line((width - 9*width/40) + 10, height/2, (width - 9*width/40), height/2)
     love.graphics.line(width/20, height/2, width/20+10, height/2)
-    love.graphics.rectangle("line", 10*width/40, lineheight - 2, lineheight*5, lineheight + 4)
-    love.graphics.printf("Sonar", 10*width/40, lineheight, lineheight*5, "center")
+    love.graphics.rectangle("line", 11*width/40, lineheight - 2, lineheight*4, lineheight + 4)
+    love.graphics.printf("Sonar", 11*width/40, lineheight, lineheight*4, "center")
     --love.graphics.print("Sonar", 10*width/40, height/6, 0, 1)
     if (player.torpedoloading > 0) then
         love.graphics.setColor(0.1, 1.0, 0.1) 
         love.graphics.setLineWidth(4)
-        love.graphics.line(25*width/40, lineheight + lineheight, 24.5*width/40 + width/50*(6 - player.torpedoloading), lineheight + lineheight)
+        love.graphics.line(25*width/40, lineheight + lineheight, 24.5*width/40 + 0.67*lineheight*(6 - player.torpedoloading), lineheight + lineheight)
         love.graphics.setLineWidth(1)
         love.graphics.setColor(0.1, 0.7, 0.1) 
     end
-    love.graphics.rectangle("line", 25*width/40, lineheight - 2, lineheight*5, lineheight + 4)
-    love.graphics.printf("Torpedo", 25*width/40, lineheight, lineheight*5, "center")
+    love.graphics.rectangle("line", 25*width/40, lineheight - 2, lineheight*4, lineheight + 4)
+    love.graphics.printf("Torpedo", 25*width/40, lineheight, lineheight*4, "center")
     --love.graphics.print("Torpedo", 24.5*width/40, height/6, 0, 1)
     love.graphics.setColor(0.1, 1.0, 0.1) 
     love.graphics.setFont(mainFont)
@@ -64,7 +64,22 @@ function drawSpeed(speed)
 end
 
 function drawThrust(thrust)
-    drawMeter(thrust, thrust - 40, thrust + 40, 5, (width - 6*width/40), "right")
+    xpos = 34.5*width/40
+    stealthy1 = math.max(height/6 + lineheight, (thrust - 6) * height/(8*5) + height/2)
+    stealthy2 = math.min(5*height/6 - lineheight, (thrust + 6) * height/(8*5) + height/2)
+    love.graphics.setColor(0.1, 0.2, 0.1) 
+    love.graphics.rectangle("fill", xpos + 1, stealthy1 - 5, width/12 - 2, stealthy2 - stealthy1 + 5)
+    love.graphics.setColor(0.1, 1.0, 0.1) 
+    markings = { [15] = "full", [10] = "half", [5] = "stealth", [0] = "stop", [-5] = "stealth", [-10] = "half", [-15] = "full"}
+    -- drawMeter(thrust, thrust - 40, thrust + 40, 5, (width - 6*width/40), "right")
+    for i = math.floor((thrust - 40)/5)*5, math.floor((thrust + 40)/5)*5, 5 do
+        y = (thrust - i) * height/(8*5) + height/2
+        if y > height/6 + lineheight and y <  5*height/6 - lineheight then
+            if (markings[i] ~= nil) then
+                love.graphics.printf(markings[i], xpos, y-15, width/12, "center")
+            end
+        end
+    end
 end
 
 function drawDepth(depth)
@@ -81,10 +96,10 @@ function drawPlayer()
         love.graphics.line(displayCenterX-10, displayCenterY+10, displayCenterX+10, displayCenterY-10)
     else
         if (math.abs(player.thrust) > 6) then
-            love.graphics.ellipse("fill", displayCenterX, displayCenterY, height/150, height/70)
+            love.graphics.ellipse("fill", displayCenterX, displayCenterY, height/140, height/60)
             player.lastKnown = {x = player.x, y = player.y, speed = player.speed, heading = player.heading, time=time}
         else
-            love.graphics.ellipse("line", displayCenterX, displayCenterY, height/150, height/70)
+            love.graphics.ellipse("line", displayCenterX, displayCenterY, height/140, height/60)
         end
     end
 end
@@ -138,17 +153,17 @@ function drawGrid(player)
     local minx = math.floor((player.x + 2500)/1000)*1000
     local minyc = (player.y - miny) * displayScale + displayCenterY
     local minxc = (player.x - minx) * displayScale + displayCenterX
-    for i = math.floor((player.y - 1500)/1000)*1000, math.floor((player.y+1500)/1000)*1000, 1000 do
+    for i = math.floor((player.y - 1500)/1000)*1000, math.floor((player.y+2000)/1000)*1000, 1000 do
         y = (player.y - i) * displayScale + height/2
-        if y > height/6 and y <  5*height/6 then            
-            dashLine({x=minxc, y=y}, {x=minxc + 4*height/3, y=y}, 5, 5)
+        if y > displayCenterY - displayRadius and y <  displayCenterY + displayRadius then        
+            dashLine({x=minxc, y=y}, {x=minxc + width, y=y}, 5, 5)
 --            dashLine({x=width/2 - height/3, y=y}, {x=width/2 + height/3, y=y}, 10, 10)
         end
     end
-    for i = math.floor((player.x - 1500)/1000)*1000, math.floor((player.x+1500)/1000)*1000, 1000 do
+    for i = math.floor((player.x - 1500)/1000)*1000, math.floor((player.x+2000)/1000)*1000, 1000 do
         x = (player.x - i) * displayScale + displayCenterX
-        if x > width/6 and x <  5*width/6 then            
-            dashLine({x=x, y=minyc}, {x=x, y=minyc + height}, 5, 5)
+        if x > displayCenterX - displayRadius and x <  displayCenterX + displayRadius then      
+            dashLine({x=x, y=minyc}, {x=x, y=minyc + 1.2*height}, 5, 5)
         end
     end
     love.graphics.setColor(0.1, 1.0, 0.1) 
@@ -296,7 +311,7 @@ function drawEnemies()
 
             local pulse = math.cos((time-enemy.lastKnown.time)/30)/4 + 0.75
             love.graphics.setColor(0.1, 1.0 * pulse, 0.1) 
-            drawDot("line", enemy.lastKnown.x, enemy.lastKnown.y, height/70, enemy.lastKnown.heading)
+            drawDot("line", enemy.lastKnown.x, enemy.lastKnown.y, height/60, enemy.lastKnown.heading)
 
             calcx = enemy.lastKnown.x + math.sin(math.rad(enemy.lastKnown.heading)) * enemy.lastKnown.speed * (time - enemy.lastKnown.time) * 5
             calcy = enemy.lastKnown.y + math.cos(math.rad(enemy.lastKnown.heading)) * enemy.lastKnown.speed * (time - enemy.lastKnown.time) * 5
