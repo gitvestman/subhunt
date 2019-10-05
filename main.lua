@@ -251,6 +251,10 @@ function drawMap()
         " The last know position of a submarine as well as the projected position of the submarine is shown on screen.\n"..
         "The enemy has the same equipment. Your engine noise and sonar will give you away as well as firing a torpedo."..
         " Use your wits and you can defeat the enemy and advance in rank.\n\nGood Luck!" , mapX + lineheight, mapY + lineheight, 5*width/8 - lineheight, "left")
+        local xpos = (time * 10) % (width/2)
+        love.graphics.ellipse("line", mapX + 4*lineheight, mapY + mapHeight, height/40, height/40/1.5, height/60)
+        love.graphics.ellipse("line", mapX + 6*lineheight + xpos, mapY + mapHeight, height/40, height/40/1.5)
+        dashLine({x=mapX + 4*lineheight, y=mapY + mapHeight}, {x=mapX + 6*lineheight + xpos, y=mapY + mapHeight}, 10, 10)
         return
     end
     love.graphics.draw(map, mapX, mapY + lineheight, 0, scale)
