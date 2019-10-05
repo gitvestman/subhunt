@@ -28,6 +28,7 @@ function love.load()
     score = 0
     kills = 0
     level = 0
+    currentRank = ranks[1]
     displayScale = height/3500
     player = {x = 0, y = 0, 
             speed = 10, thrust = 10, heading = 0, rudder = 0, 
@@ -136,6 +137,8 @@ function love.keypressed(key)
         if (level == 0) then 
             level = 1
             time = 0
+        elseif getRank(score) ~= currentRank then
+            currentRank = getRank(score)
         else
             showMap = false;
         end
@@ -241,6 +244,12 @@ function drawMap()
     love.graphics.rectangle("fill", mapX, mapY - 2 * lineheight, mapWidth, mapHeight + 4 * lineheight)
     love.graphics.setColor(0.1, 1.0, 0.1) 
     love.graphics.rectangle("line", mapX, mapY - 2 * lineheight, mapWidth, mapHeight + 4 * lineheight)
+    if (getRank(score) ~= currentRank) then
+        love.graphics.setFont(mainFont)
+        love.graphics.printf("Well done!\n\nYou have been promoted to "..getRank(score), mapX + lineheight, height/2, 5*width/8 - lineheight, "center")
+        love.graphics.setFont(smallFont)
+        return
+    end
     if (level == 0) then
         love.graphics.setFont(mainFont)
         love.graphics.printf("Welcome Lieutenant!", mapX + lineheight,  mapY - lineheight, 5*width/8 - lineheight, "left")
@@ -248,13 +257,15 @@ function drawMap()
         love.graphics.printf("You have been assigned a submarine with a crew.\nThis submarine has "..
         "a sonar system that can detect engine noise from enemy submarines, as well as send out "..
         "a sonar pulse to detect submarines running their engines in stealth mode."..
-        " The last know position of a submarine as well as the projected position of the submarine is shown on screen.\n"..
+        " On the screen the last know position of a submarine is shown. The last known heading and speed is also "..
+        "used to calculate and display a possible position.\n\n\n"..
         "The enemy has the same equipment. Your engine noise and sonar will give you away as well as firing a torpedo."..
         " Use your wits and you can defeat the enemy and advance in rank.\n\nGood Luck!" , mapX + lineheight, mapY + lineheight, 5*width/8 - lineheight, "left")
         local xpos = (time * 10) % (width/2)
-        love.graphics.ellipse("line", mapX + 4*lineheight, mapY + mapHeight, height/40, height/40/1.5, height/60)
-        love.graphics.ellipse("line", mapX + 6*lineheight + xpos, mapY + mapHeight, height/40, height/40/1.5)
-        dashLine({x=mapX + 4*lineheight, y=mapY + mapHeight}, {x=mapX + 6*lineheight + xpos, y=mapY + mapHeight}, 10, 10)
+        local ypos = height/2 + lineheight
+        love.graphics.ellipse("line", mapX + 4*lineheight, ypos, height/40, height/40/1.5, height/60)
+        love.graphics.ellipse("line", mapX + 6*lineheight + xpos, ypos, height/40, height/40/1.5)
+        dashLine({x=mapX + 4*lineheight, y=ypos}, {x=mapX + 6*lineheight + xpos, y=ypos}, 10, 10)
         return
     end
     love.graphics.draw(map, mapX, mapY + lineheight, 0, scale)
@@ -469,6 +480,8 @@ function love.mousepressed( x, y, button, istouch )
         if (level == 0) then 
             level = 1
             time = 0
+        elseif getRank(score) ~= currentRank then
+            currentRank = getRank(score)
         else
             showMap = false;
         end
