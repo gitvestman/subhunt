@@ -57,17 +57,17 @@ function highscore.draw()
         textbox:draw(getRank(score))
     elseif highscorestate == "highscores" then
         love.graphics.setColor(0.05, 0.1, 0.05, 0.9) 
-        love.graphics.rectangle("fill", width/4 , height/2-6*lineheight, width/2, 13*lineheight) 
+        love.graphics.rectangle("fill", width/4 , height/4, width/2, 15*lineheight) 
         love.graphics.setColor(0.1, 1.0, 0.1) 
-        love.graphics.rectangle("line", width/4 , height/2-6*lineheight, width/2, 13*lineheight) 
-        texty = height/2-5*lineheight
+        love.graphics.rectangle("line", width/4 , height/4, width/2, 15*lineheight) 
+        texty = height/4 + lineheight
         love.graphics.setFont(mainFont)
         love.graphics.printf("Hall of fame", width/4 + lineheight, texty - 2 ,300)
         love.graphics.setFont(smallFont)
         texty = texty + lineheight + 10
         for i,v in ipairs(HighScores) do 
-            if i < 10 then
-                love.graphics.printf(getRank(v[2]).." "..v[1], width/4 + lineheight, texty ,300)
+            if i < 12 then
+                love.graphics.printf(getRank(v[2]).." "..v[1], width/4 + lineheight, texty ,350)
                 love.graphics.printf(v[2], width/2 + 4 * lineheight, texty ,300)
                 texty = texty + lineheight
             else
@@ -78,7 +78,7 @@ function highscore.draw()
 end
 
 function getRank(score)
-    return ranks[math.min(math.floor(score/250) + 1, #ranks)]
+    return ranks[math.min(math.floor((score-100)/350) + 1, #ranks)]
 end
 
 function love.textinput(text)
@@ -102,7 +102,7 @@ function CheckHighScore()
     if (highscorestate ~= "none" or offline) then
         return
     end
-    if score > 0 and (#HighScores < 10 or score > HighScores[10][2]) then
+    if score > 0 and (#HighScores < 12 or score > HighScores[12][2]) then
         highscorestate = "input"
         love.keyboard.setTextInput( true )
     elseif (#HighScores) > 1 then
@@ -121,7 +121,7 @@ end
 
 function getHighScores()
     http.TIMEOUT = 5
-    b, c, h = http.request("http://dreamlo.com/lb/5d7fe66ed1041303ecaac404/pipe/10")
+    b, c, h = http.request("http://dreamlo.com/lb/5d7fe66ed1041303ecaac404/pipe/12")
 
     HighScores = {}
     if (c == "timeout") then
