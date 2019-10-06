@@ -14,9 +14,9 @@ function love.load()
     width = love.graphics.getWidth()
     height = love.graphics.getHeight()
     size = math.min(height, 0.68*width)
-    mainFont = love.graphics.newFont(width/32)
-    smallFont = love.graphics.newFont(width/44)
-    lineheight = height/25
+    mainFont = love.graphics.newFont(size/22)
+    smallFont = love.graphics.newFont(size/26)
+    lineheight = size/27
     sonarSound = love.audio.newSource("12677__peter-gross__sonar-pings.ogg", "static")
     torpedoSound = love.audio.newSource("327990__bymax__processed-swish-swoosh-whoosh.ogg", "static")
     explosionSound = love.audio.newSource("147873__zesoundresearchinc__depthbomb-04.ogg", "static")
@@ -263,7 +263,7 @@ function drawMap()
         " Use your wits and you can defeat the enemy and advance in rank.\n\nGood Luck!" , mapX + lineheight, mapY + 0.5*lineheight, mapWidth - 2*lineheight, "left")
         local xpos = (time * 10) % (width/2)
         --print(mapHeight, mapWidth, mapHeight/mapWidth, mapWidth/mapHeight)
-        local ypos = height/2 + 0.5*lineheight
+        local ypos = mapY + 10*lineheight
         love.graphics.ellipse("line", mapX + 4*lineheight, ypos, height/40, height/40/1.5, height/60)
         love.graphics.ellipse("line", mapX + 6*lineheight + xpos, ypos, height/40, height/40/1.5)
         dashLine({x=mapX + 4*lineheight, y=ypos}, {x=mapX + 6*lineheight + xpos, y=ypos}, 10, 10)
