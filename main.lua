@@ -13,10 +13,10 @@ function love.load()
     love.math.setRandomSeed(1337)
     width = love.graphics.getWidth()
     height = love.graphics.getHeight()
-    size = math.min(height, 0.68*width)
+    size = math.min(height, 0.60*width)
     mainFont = love.graphics.newFont(size/22)
     smallFont = love.graphics.newFont(size/26)
-    lineheight = size/27
+    lineheight = size/26
     sonarSound = love.audio.newSource("12677__peter-gross__sonar-pings.ogg", "static")
     torpedoSound = love.audio.newSource("327990__bymax__processed-swish-swoosh-whoosh.ogg", "static")
     explosionSound = love.audio.newSource("147873__zesoundresearchinc__depthbomb-04.ogg", "static")
@@ -241,9 +241,9 @@ function drawMap()
     local mapX = width/2 - mapWidth/2
     local mapY = height/2 - mapHeight/2
     love.graphics.setColor(0.1, 0.2, 0.1) 
-    love.graphics.rectangle("fill", mapX, mapY - 2 * lineheight, mapWidth, mapHeight + 4 * lineheight)
+    love.graphics.rectangle("fill", mapX, mapY - 2 * lineheight, mapWidth, mapHeight + 4.5 * lineheight)
     love.graphics.setColor(0.1, 1.0, 0.1) 
-    love.graphics.rectangle("line", mapX, mapY - 2 * lineheight, mapWidth, mapHeight + 4 * lineheight)
+    love.graphics.rectangle("line", mapX, mapY - 2 * lineheight, mapWidth, mapHeight + 4.5 * lineheight)
     if (getRank(score) ~= currentRank) then
         love.graphics.setFont(mainFont)
         love.graphics.printf("Well done!\n\nYou have been promoted to "..getRank(score), mapX + lineheight, height/2 - 4*lineheight, mapWidth - 2*lineheight, "center")
@@ -254,14 +254,14 @@ function drawMap()
         love.graphics.setFont(mainFont)
         love.graphics.printf("Welcome Lieutenant!", mapX + lineheight,  mapY - 1.5*lineheight, mapWidth - 2*lineheight, "left")
         love.graphics.setFont(smallFont)
-        love.graphics.printf("You have been assigned a submarine with a crew. This submarine has "..
+        love.graphics.printf("You have been assigned a submarine with a crew.\nThis submarine has "..
         "a sonar system that can detect engine noise from enemy submarines, as well as send out "..
         "a sonar pulse to detect submarines running their engines in stealth mode."..
         " On the screen the last know position of a submarine is shown. The last known heading and speed is also "..
         "used to display a calculated position.\n\n\n"..
         "The enemy has the same equipment. Your engine noise and sonar will give you away as well as firing a torpedo."..
         " Use your wits and you can defeat the enemy and advance in rank.\n\nGood Luck!" , mapX + lineheight, mapY + 0.5*lineheight, mapWidth - 2*lineheight, "left")
-        local xpos = (time * 10) % (width/2)
+        local xpos = (time * 10) % (mapWidth - 8*lineheight)
         --print(mapHeight, mapWidth, mapHeight/mapWidth, mapWidth/mapHeight)
         local ypos = mapY + 10*lineheight
         love.graphics.ellipse("line", mapX + 4*lineheight, ypos, height/40, height/40/1.5, height/60)
@@ -393,26 +393,26 @@ end
 function handleTouch(x, y, dt)
     rudderhalfwidth = 4*width/40
     rudderx = player.rudder*6*height/40
-    if pointInRange(x, y, 14*width/40 - lineheight, 5*height/6 + lineheight, 3*lineheight + rudderhalfwidth - rudderx) then
+    if pointInRange(x, y, 14*width/40 - lineheight, 5*height/6 + lineheight, 3*lineheight + rudderhalfwidth - rudderx, 1) then
         player.rudder = player.rudder + dt * 0.4
         if (player.rudder > 1) then 
             player.rudder = 1
         end
     end
-    if pointInRange(x, y, width/2 - rudderx, 5*height/6 + lineheight, 3*lineheight + rudderhalfwidth + rudderx ) then
+    if pointInRange(x, y, width/2 - rudderx, 5*height/6 + lineheight, 3*lineheight + rudderhalfwidth + rudderx, 1) then
         player.rudder = player.rudder - dt * 0.4
         if (player.rudder < -1) then 
             player.rudder = -1
         end
     end
-    if pointInRange(x, y, 34.5*width/40+4, height/6 + lineheight, 5*lineheight) and player.thrust < 20 then
+    if pointInRange(x, y, 34.5*width/40+4, height/6 + lineheight, 5*lineheight, 3) and player.thrust < 20 then
         player.thrust = player.thrust + dt * 3
         fullstop = false
         if (player.thrust > 20) then 
             player.thrust = 20
         end
     end
-    if pointInRange(x, y, 34.5*width/40+4, 4*height/6 + 1.5*lineheight, 5*lineheight) and (player.thrust > 0 or fullstop) then
+    if pointInRange(x, y, 34.5*width/40+4, 4*height/6 - 0.5*lineheight, 5*lineheight, 3) and (player.thrust > 0 or fullstop) then
         player.thrust = player.thrust - dt * 3
         if not fullstop and player.thrust < 0 then 
             player.thrust = 0
@@ -421,7 +421,7 @@ function handleTouch(x, y, dt)
             player.thrust = -20
         end
     end
-    if not pointInRange(x, y, 38*width/40+4, 4*height/6 + 1.5*lineheight, 2*lineheight) and player.thrust == 0 then
+    if not pointInRange(x, y, 38*width/40+4, 4*height/6 - 0.5*lineheight, 2*lineheight, 3) and player.thrust == 0 then
         fullstop = true
     end
 end
@@ -472,8 +472,8 @@ function checkKeyboard(dt)
     end
 end
 
-function pointInRange(x, y, targetx, targety, width) 
-    return (x-targetx < width + lineheight/2 and x-targetx > -lineheight/2 and y - targety < 2*lineheight and y - targety > -lineheight/2)
+function pointInRange(x, y, targetx, targety, width, height) 
+    return (x-targetx < width + lineheight/2 and x-targetx > -lineheight/2 and y - targety < (1 + height)*lineheight and y - targety > -lineheight/2)
 end
 
 function love.mousepressed( x, y, button, istouch )
@@ -488,12 +488,12 @@ function love.mousepressed( x, y, button, istouch )
         end
         return
     end
-    if pointInRange(x, y, 25*width/40, lineheight, lineheight*5) then
+    if pointInRange(x, y, 25*width/40, lineheight, lineheight*5, 1) then
         if player.torpedoloading <= 0 then
             fireTorpedo(player)
         end
     end
-    if pointInRange(x, y, 10*width/40, lineheight, lineheight*5) then
+    if pointInRange(x, y, 10*width/40, lineheight, lineheight*5, 1) then
         if not sonar.active then
             sonar = {active = true, time = time}
             sonarSound:play()
