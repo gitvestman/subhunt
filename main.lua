@@ -14,8 +14,8 @@ function love.load()
     width = love.graphics.getWidth()
     height = love.graphics.getHeight()
     size = math.min(height, 0.60*width)
-    mainFont = love.graphics.newFont(size/22)
-    smallFont = love.graphics.newFont(size/26)
+    mainFont = love.graphics.newFont(math.floor(size/22))
+    smallFont = love.graphics.newFont(math.floor(size/26))
     lineheight = size/26
     sonarSound = love.audio.newSource("12677__peter-gross__sonar-pings.ogg", "static")
     torpedoSound = love.audio.newSource("327990__bymax__processed-swish-swoosh-whoosh.ogg", "static")
@@ -35,7 +35,7 @@ function love.load()
             torpedoloading = 0, type = "player" }
     enemies = {{x = love.math.random() * 1500 - 750, y = love.math.random() * 500 + 1200, 
             speed = 10, thrust = 10, heading = 180, rudder = 0, dead = false, strategy = 1, 
-            torpedoloading = 0, time = time, type = "enemy"}}
+            torpedoloading = 10, time = time, type = "enemy"}}
     torpedos = {}
     finalCountdown = 0
     explosions = {}
@@ -160,6 +160,18 @@ function love.keypressed(key)
     end     
 end
 
+function love.touchpressed(id, x, y)
+  highscore.touchpressed(id, x, y)
+end
+
+function love.touchmoved(id, x, y, dx, dy)
+  highscore.touchmoved(id, x, y, dx, dy)
+end
+
+function love.touchreleased(id, x, y)
+  highscore.touchreleased(id, x, y)
+end
+
 function GameOver()
     CheckHighScore()
 end
@@ -194,7 +206,7 @@ function enemyAi(dt, enemy, player)
         finalCountdown = 5
     end
 
-    if math.abs(differential) < enemyhitangle and enemy.torpedoloading <= 0 and level > 1 then
+    if math.abs(differential) < enemyhitangle and enemy.torpedoloading <= 0 then
         fireTorpedo(enemy)
     end
 
@@ -499,5 +511,6 @@ function love.mousepressed( x, y, button, istouch )
             sonarSound:play()
         end
     end 
+    highscore.mousepressed(x, y, button, istouch)
 end
 

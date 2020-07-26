@@ -4,6 +4,10 @@ http = require("socket.http")
 
 highscore = {}
 offline = false
+playername = ""
+playerRank = -1
+highscorescroll = 0
+highscorescrollspeed = 0
 
 ranks = {"Lieutenant", "Commander", "Captain", "Admiral"}
 
@@ -39,13 +43,28 @@ function highscore.update(dt)
         getHighScores()
         return true
     elseif highscorestate == "highscores" then
-        if (time - restarttime > 5.0) then            
+        if (time - restarttime > 10.0) then            
             love.load()
+        end
+        if love.keyboard.isDown("up", "w") then
+             highscorescroll = highscorescroll + 1
+        end
+        if love.keyboard.isDown("down", "s") then
+             highscorescroll = highscorescroll - 1
+        end
+        if (math.abs(highscorescrollspeed) > 0.1) then
+            highscorescroll = highscorescroll + highscorescrollspeed
+            highscorescrollspeed = highscorescrollspeed * 0.8
         end
         return true
     end
     return false
 end
+
+local function highscoreStencilFunction()
+   love.graphics.rectangle("fill", width/4 + 2 , height/4 + lineheight * 2 + 10, width/2 - 4, 12*lineheight - 2)
+end
+
 
 function highscore.draw()
     if (#HighScores) > 1 then
@@ -63,17 +82,38 @@ function highscore.draw()
         texty = height/4 + lineheight
         love.graphics.setFont(mainFont)
         love.graphics.printf("Hall of fame", width/4 + lineheight, texty - 2 ,300)
+        love.graphics.stencil(highscoreStencilFunction, "replace", 1)
+        love.graphics.setStencilTest("greater", 0)
         love.graphics.setFont(smallFont)
         texty = texty + lineheight + 10
+        if (playerRank > 11) then
+            texty = texty - (playerRank - 11) * lineheight
+        end
+        texty = texty - highscorescroll
+        if (texty > height/4 + lineheight*2 + 10) then
+            texty = height/4 + lineheight*2 + 10
+        end
+        if (texty < height/4 - lineheight*88 + 10) then
+            texty = height/4 - lineheight*88 + 10
+        end
         for i,v in ipairs(HighScores) do 
-            if i < 12 then
-                love.graphics.printf(getRank(v[2]).." "..v[1], width/4 + lineheight, texty ,350)
-                love.graphics.printf(v[2], width/2 + 4 * lineheight, texty ,300)
+            if i < 100 then
+                if (i == playerRank) then
+                    local pulse = math.sin(time*18)/4 + 0.75
+                    love.graphics.setColor(0.3, 1.0 * pulse, 0.3) 
+                    love.graphics.printf(i..": "..getRank(v[2]).." "..v[1], width/4 + lineheight, texty ,350)
+                    love.graphics.printf(v[2], width/2 + 4 * lineheight, texty ,300)
+                else
+                    love.graphics.setColor(0.1, 1.0, 0.1) 
+                    love.graphics.printf(i..": "..getRank(v[2]).." "..v[1], width/4 + lineheight, texty ,350)
+                    love.graphics.printf(v[2], width/2 + 4 * lineheight, texty ,300)
+                end
                 texty = texty + lineheight
             else
                 HighScores[i] = nil
             end
         end
+        love.graphics.setStencilTest()
     end
 end
 
@@ -92,17 +132,52 @@ function highscore.keypressed(key)
         textbox:keypressed(key)
         return true
     end
-    if highscorestate == "highscores" and (key == "space" or key == "return") then
-        love.load()
+    if highscorestate == "highscores" then
+        if key == "space" or key == "return" then
+            love.load()
+        end
     end
     return false
+end
+
+function highscore.mousepressed( x, y, button, istouch )
+--    if highscorestate == "highscores" then
+--        love.load()
+--    end
+end
+
+local touches = {}
+local startscroll = 0
+
+function highscore.touchpressed(id, x, y)
+    if highscorestate == "highscores" then
+        if x > width/4 + 2 and x < width/4 + 2 + width/2 - 4 and y > height/4 + lineheight * 2 + 10 and y < height/4 + lineheight * 2 + 10 + 12*lineheight - 2 then
+            touches[id] = {x, y, 0, 0}
+            startscroll = highscorescroll
+        end
+    end
+end
+
+function highscore.touchmoved(id, x, y, dx, dy)
+    if touches[id] ~= nil then
+        highscorescroll = startscroll + (touches[id][1] - y)
+        touches[id] = {x, y, dx, dy}
+    end
+end
+
+function highscore.touchreleased(id, x, y)
+    if touches[id] ~= nil then
+        highscorescroll = startscroll + (touches[id][1] - y)
+        highscorescrollspeed = -touches[id][4]
+    end
+    touches[id] = nil
 end
 
 function CheckHighScore()
     if (highscorestate ~= "none" or offline) then
         return
     end
-    if score > 0 and (#HighScores < 12 or score > HighScores[12][2]) then
+    if score > 0 and (#HighScores < 50 or score > HighScores[50][2]) then
         highscorestate = "input"
         love.keyboard.setTextInput( true )
     elseif (#HighScores) > 1 then
@@ -120,19 +195,27 @@ function sendHighScore(playername, score)
 end
 
 function getHighScores()
+    print("getHighScores "..playername)
     http.TIMEOUT = 5
-    b, c, h = http.request("http://dreamlo.com/lb/5d7fe66ed1041303ecaac404/pipe/12")
+    b, c, h = http.request("http://dreamlo.com/lb/5d7fe66ed1041303ecaac404/pipe/100")
 
     HighScores = {}
     if (c == "timeout") then
         offline = true
         return
     end
+    playerRank = -1
+    highscorescroll = 0
+    highscorescrollspeed = 0
     lines = string.explode(b, "\n")
     for i,v in pairs(lines) do
         tbl = string.explode(v, "|")
         if (tbl[1] ~= nil and tbl[2] ~= nil) then
             HighScores[i] = {tbl[1],tonumber(tbl[2])}
+            if (tbl[1] == playername and tonumber(tbl[2]) == score) then
+                playerRank = i
+                print("playerRank == "..i)
+            end
         end
     end
 end
