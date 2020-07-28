@@ -57,8 +57,10 @@ function TextInput:textinput(key)
 		if self.shift then
 			thekey = key:upper()
 		end
-		self.text = string.sub(self.text, 1, self.cursor_pos) .. thekey .. string.sub(self.text, self.cursor_pos+1)
-		self.cursor_pos = self.cursor_pos+1
+		if (string.match(thekey,"%w") ~= nil) then
+			self.text = string.sub(self.text, 1, self.cursor_pos) .. thekey .. string.sub(self.text, self.cursor_pos+1)
+			self.cursor_pos = self.cursor_pos+1
+		end
 	end
 end
 

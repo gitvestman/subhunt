@@ -133,7 +133,7 @@ function love.keypressed(key)
     if highscore.keypressed(key) then 
         return
     end
-    if showMap and (key == "space" or key == "return") and time > 1 then
+    if showMap and (key == "space" or key == "return") and time > 0.2 then
         if (level == 0) then 
             level = 1
             time = 0
@@ -489,7 +489,7 @@ function pointInRange(x, y, targetx, targety, width, height)
 end
 
 function love.mousepressed( x, y, button, istouch )
-    if showMap and time > 1 then
+    if showMap and time > 0.2 then
         if (level == 0) then 
             level = 1
             time = 0

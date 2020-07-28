@@ -70,6 +70,8 @@ function highscore.draw()
     if (#HighScores) > 1 then
         love.graphics.print("Top Dog:", 10, 10, 0, 1)
         love.graphics.print(getRank(HighScores[1][2]).." "..HighScores[1][1]..": "..HighScores[1][2], 10, lineheight + 15, 0, 1)
+    else
+        love.graphics.print("Offline", 10, 10, 0, 1)
     end
 
     if highscorestate == "input" then
@@ -160,24 +162,28 @@ end
 
 function highscore.touchmoved(id, x, y, dx, dy)
     if touches[id] ~= nil then
-        highscorescroll = startscroll + (touches[id][1] - y)
-        touches[id] = {x, y, dx, dy}
+        highscorescroll = startscroll + (touches[id][2] - y)
     end
 end
 
 function highscore.touchreleased(id, x, y)
     if touches[id] ~= nil then
-        highscorescroll = startscroll + (touches[id][1] - y)
+        highscorescroll = startscroll + (touches[id][2] - y)
         highscorescrollspeed = -touches[id][4]
+        print("touchreleased "..highscorescroll)
+        if math.abs(highscorescroll) < 1 then
+            love.load()
+        end
     end
     touches[id] = nil
 end
 
 function CheckHighScore()
     if (highscorestate ~= "none" or offline) then
-        return
+        love.load()
+        --return
     end
-    if score > 0 and (#HighScores < 50 or score > HighScores[50][2]) then
+    if score > 0 and (#HighScores < 75 or score > HighScores[75][2]) then
         highscorestate = "input"
         love.keyboard.setTextInput( true )
     elseif (#HighScores) > 1 then
@@ -200,8 +206,9 @@ function getHighScores()
     b, c, h = http.request("http://dreamlo.com/lb/5d7fe66ed1041303ecaac404/pipe/100")
 
     HighScores = {}
-    if (c == "timeout") then
+    if not (c == 200) then
         offline = true
+        print("Error: '"..c.."'")
         return
     end
     playerRank = -1
