@@ -170,7 +170,6 @@ function highscore.touchreleased(id, x, y)
     if touches[id] ~= nil then
         highscorescroll = startscroll + (touches[id][2] - y)
         highscorescrollspeed = -touches[id][4]
-        print("touchreleased "..highscorescroll)
         if math.abs(highscorescroll) < 1 then
             love.load()
         end
