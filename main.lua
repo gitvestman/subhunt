@@ -252,7 +252,7 @@ function drawMap()
     local mapWidth = map:getWidth()*scale
     local mapX = width/2 - mapWidth/2
     local mapY = height/2 - mapHeight/2
-    love.graphics.setColor(0.1, 0.2, 0.1) 
+    love.graphics.setColor(0.05, 0.15, 0.05) 
     love.graphics.rectangle("fill", mapX, mapY - 2 * lineheight, mapWidth, mapHeight + 4.5 * lineheight)
     love.graphics.setColor(0.1, 1.0, 0.1) 
     love.graphics.rectangle("line", mapX, mapY - 2 * lineheight, mapWidth, mapHeight + 4.5 * lineheight)
