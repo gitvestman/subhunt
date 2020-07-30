@@ -218,7 +218,7 @@ function getHighScores()
         tbl = string.explode(v, "|")
         if (tbl[1] ~= nil and tbl[2] ~= nil) then
             HighScores[i] = {tbl[1],tonumber(tbl[2])}
-            if (tbl[1] == playername and tonumber(tbl[2]) == score) then
+            if (tbl[1] == playername) then
                 playerRank = i
                 print("playerRank == "..i)
             end

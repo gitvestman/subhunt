@@ -57,6 +57,17 @@ function love.load()
     love.keyboard.setKeyRepeat(false)
 end
 
+function love.displayrotated() -- index, orientation )
+    print("displayrotated")
+    width = love.graphics.getWidth()
+    height = love.graphics.getHeight()
+    size = math.min(height, 0.60*width)
+    mainFont = love.graphics.newFont(math.floor(size/22))
+    smallFont = love.graphics.newFont(math.floor(size/26))
+    lineheight = size/26
+    displayScale = height/3500
+end
+
 function newLevel()
     level = level + 1
     print("newLevel: "..level)
@@ -70,6 +81,9 @@ function newLevel()
 end
 
 function love.update(dt)
+    if width ~= love.graphics.getWidth() then
+        love.displayrotated()
+    end
     time = time + dt
     framerate = 1/dt
     depth = 100 + 10 * math.sin(time*player.speed/500)
