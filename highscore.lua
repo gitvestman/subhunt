@@ -54,15 +54,19 @@ function highscore.update(dt)
         end
         if (math.abs(highscorescrollspeed) > 0.1) then
             highscorescroll = highscorescroll + highscorescrollspeed
-            highscorescrollspeed = highscorescrollspeed * 0.8
+            highscorescrollspeed = highscorescrollspeed * 0.9
+            print("update highscorescrollspeed "..highscorescrollspeed)
         end
         return true
+    end
+    if (highscorestate == "restart") then
+        love.load()
     end
     return false
 end
 
 local function highscoreStencilFunction()
-   love.graphics.rectangle("fill", width/4 + 2 + screenx , height/8 + lineheight * 2 + 10, width/2 - 4, 12*lineheight - 2)
+   love.graphics.rectangle("fill", width/4 + 2 + screenx , height/8 + lineheight * 2 + 10, width/2 - 4, 3*height/4 - lineheight * 5 - 12)
 end
 
 
@@ -86,13 +90,13 @@ function highscore.draw()
         love.graphics.printf("Hall of fame", width/4 + lineheight + screenx, texty - 2 ,300)
         love.graphics.setColor(0.1, 0.3, 0.1) 
         love.graphics.rectangle("fill", 3*width/4 - width/16 + screenx , texty - lineheight + 2, width/16, 2*lineheight - 4) 
-        love.graphics.setColor(1.0, 1.0, 0.1) 
+        love.graphics.setColor(0.1, 1.0, 0.1) 
         love.graphics.line(3*width/4 - width/32 + screenx-10, texty-10, 3*width/4 - width/32 + screenx+10, texty+10)
         love.graphics.line(3*width/4 - width/32 + screenx-10, texty+10, 3*width/4 - width/32 + screenx+10, texty-10)
         love.graphics.rectangle("line", width/4 + screenx, texty + 3*height/4 - lineheight * 3.5, width/2, lineheight * 2.5)
         love.graphics.setColor(1.0, 0.5, 0.1) 
         love.graphics.printf("Try The Multiplayer Version", width/4 + screenx, texty + 3*height/4 - lineheight * 3, width/2, "center")
-        love.graphics.setColor(1.0, 1.0, 0.1) 
+        love.graphics.setColor(0.1, 1.0, 0.1) 
         love.graphics.stencil(highscoreStencilFunction, "replace", 1)
         love.graphics.setStencilTest("greater", 0)
         love.graphics.setFont(smallFont)
@@ -101,11 +105,13 @@ function highscore.draw()
             texty = texty - (playerRank - 11) * lineheight
         end
         texty = texty - highscorescroll
-        if (texty > height/4 + lineheight*2 + 10) then
-            texty = height/4 + lineheight*2 + 10
+        if (texty > height/8 + lineheight*2 + 10) then
+            texty = height/8 + lineheight*2 + 10
+            highscorescrollspeed = 0
         end
-        if (texty < height/4 - lineheight*88 + 10) then
-            texty = height/4 - lineheight*88 + 10
+        if (texty < height/8 - lineheight*88 + 10) then
+            texty = height/8 - lineheight*88 + 10
+            highscorescrollspeed = 0
         end
         for i,v in ipairs(HighScores) do 
             if i < 100 then
@@ -152,12 +158,14 @@ function highscore.keypressed(key)
 end
 
 function highscore.mousepressed( x, y, button, istouch )
-    if x > 3*width/4 - width/16 + screenx and x < 3*width/4 + screenx and y > height/8 and y < height/8 + 2*lineheight then
-        love.load()
-    end
-    if x > width/4 + screenx and x < 3*width/4 + screenx and y > 7*height/8 - lineheight * 2.5 and y < 7*height/8 then
-        print("Go to app store")
-        love.system.openURL("https://apps.apple.com/us/app/submarine-sonar-multiplayer/id1524164487")
+    if highscorestate == "highscores" then
+        if x > 3*width/4 - width/16 + screenx and x < 3*width/4 + screenx and y > height/8 and y < height/8 + 2*lineheight then
+            highscorestate = "restart"
+        end
+        if x > width/4 + screenx and x < 3*width/4 + screenx and y > 7*height/8 - lineheight * 2.5 and y < 7*height/8 then
+            print("Go to app store")
+            love.system.openURL("https://apps.apple.com/us/app/submarine-sonar-multiplayer/id1524164487")
+        end
     end
 end
 
@@ -169,6 +177,7 @@ function highscore.touchpressed(id, x, y)
         if x > width/4 + 2 + screenx and x < width/4 + 2 + width/2 - 4 + screenx and y > height/8 + lineheight * 2 + 10 and y < height/8 + lineheight * 2 + 10 + 12*lineheight - 2 then
             touches[id] = {x, y, 0, 0}
             startscroll = highscorescroll
+            highscorescrollspeed = 0
         end
     end
 end
@@ -176,13 +185,13 @@ end
 function highscore.touchmoved(id, x, y, dx, dy)
     if touches[id] ~= nil then
         highscorescroll = startscroll + (touches[id][2] - y)
+        highscorescrollspeed = (highscorescrollspeed - dy) / 2
     end
 end
 
 function highscore.touchreleased(id, x, y)
     if touches[id] ~= nil then
         highscorescroll = startscroll + (touches[id][2] - y)
-        highscorescrollspeed = -touches[id][4]
         if math.abs(highscorescroll) < 1 then
             love.load()
         end

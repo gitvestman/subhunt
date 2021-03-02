@@ -36,8 +36,8 @@ function love.load()
             speed = 10, thrust = 10, heading = 0, rudder = 0, 
             torpedoloading = 0, type = "player" }
     enemies = {{x = love.math.random() * 1500 - 750, y = love.math.random() * 500 + 1200, 
-            speed = 10, thrust = 10, heading = 180, rudder = 0, dead = false, strategy = 1, 
-            torpedoloading = 10, time = time, type = "enemy"}}
+            speed = 10, thrust = 10, heading = 240, rudder = 0, dead = false, strategy = 4, 
+            torpedoloading = 15, time = time, type = "enemy"}}
     torpedos = {}
     finalCountdown = 0
     explosions = {}
@@ -430,7 +430,7 @@ function handleTouch(x, y, dt)
             player.rudder = 1
         end
     end
-    if pointInRange(x, y, width/2 - rudderx + screenx, 5*height/6 + lineheight, 3*lineheight + rudderhalfwidth + rudderx, 1) then
+    if pointInRange(x, y, width/2 - rudderx + screenx, 5*height/6 + lineheight, 4*lineheight + rudderhalfwidth + rudderx, 1) then
         player.rudder = player.rudder - dt * 0.4
         if (player.rudder < -1) then 
             player.rudder = -1
