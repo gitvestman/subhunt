@@ -43,7 +43,7 @@ function highscore.update(dt)
         getHighScores()
         return true
     elseif highscorestate == "highscores" then
-        if (time - restarttime > 10.0) then            
+        if (time - restarttime > 15.0) then            
             love.load()
         end
         if love.keyboard.isDown("up", "w") then
@@ -62,28 +62,37 @@ function highscore.update(dt)
 end
 
 local function highscoreStencilFunction()
-   love.graphics.rectangle("fill", width/4 + 2 , height/4 + lineheight * 2 + 10, width/2 - 4, 12*lineheight - 2)
+   love.graphics.rectangle("fill", width/4 + 2 + screenx , height/8 + lineheight * 2 + 10, width/2 - 4, 12*lineheight - 2)
 end
 
 
 function highscore.draw()
     if (#HighScores) > 1 then
-        love.graphics.print("Top Dog:", 10, 10, 0, 1)
-        love.graphics.print(getRank(HighScores[1][2]).." "..HighScores[1][1]..": "..HighScores[1][2], 10, lineheight + 15, 0, 1)
+        love.graphics.print("Top Dog:", 10 + screenx, 10, 0, 1)
+        love.graphics.print(getRank(HighScores[1][2]).." "..HighScores[1][1]..": "..HighScores[1][2], 10 + screenx, lineheight + 15, 0, 1)
     else
-        love.graphics.print("Offline", 10, 10, 0, 1)
+        love.graphics.print("Offline", 10 + screenx, 10, 0, 1)
     end
 
     if highscorestate == "input" then
         textbox:draw(getRank(score))
     elseif highscorestate == "highscores" then
         love.graphics.setColor(0.05, 0.1, 0.05, 0.9) 
-        love.graphics.rectangle("fill", width/4 , height/4, width/2, 15*lineheight) 
+        love.graphics.rectangle("fill", width/4 + screenx , height/8, width/2, 3*height/4) 
         love.graphics.setColor(0.1, 1.0, 0.1) 
-        love.graphics.rectangle("line", width/4 , height/4, width/2, 15*lineheight) 
-        texty = height/4 + lineheight
+        love.graphics.rectangle("line", width/4 + screenx , height/8, width/2, 3*height/4) 
+        texty = height/8 + lineheight
         love.graphics.setFont(mainFont)
-        love.graphics.printf("Hall of fame", width/4 + lineheight, texty - 2 ,300)
+        love.graphics.printf("Hall of fame", width/4 + lineheight + screenx, texty - 2 ,300)
+        love.graphics.setColor(0.1, 0.3, 0.1) 
+        love.graphics.rectangle("fill", 3*width/4 - width/16 + screenx , texty - lineheight + 2, width/16, 2*lineheight - 4) 
+        love.graphics.setColor(1.0, 1.0, 0.1) 
+        love.graphics.line(3*width/4 - width/32 + screenx-10, texty-10, 3*width/4 - width/32 + screenx+10, texty+10)
+        love.graphics.line(3*width/4 - width/32 + screenx-10, texty+10, 3*width/4 - width/32 + screenx+10, texty-10)
+        love.graphics.rectangle("line", width/4 + screenx, texty + 3*height/4 - lineheight * 3.5, width/2, lineheight * 2.5)
+        love.graphics.setColor(1.0, 0.5, 0.1) 
+        love.graphics.printf("Try The Multiplayer Version", width/4 + screenx, texty + 3*height/4 - lineheight * 3, width/2, "center")
+        love.graphics.setColor(1.0, 1.0, 0.1) 
         love.graphics.stencil(highscoreStencilFunction, "replace", 1)
         love.graphics.setStencilTest("greater", 0)
         love.graphics.setFont(smallFont)
@@ -103,12 +112,12 @@ function highscore.draw()
                 if (i == playerRank) then
                     local pulse = math.sin(time*18)/4 + 0.75
                     love.graphics.setColor(0.3, 1.0 * pulse, 0.3) 
-                    love.graphics.printf(i..": "..getRank(v[2]).." "..v[1], width/4 + lineheight, texty ,350)
-                    love.graphics.printf(v[2], width/2 + 4 * lineheight, texty ,300)
+                    love.graphics.printf(i..": "..getRank(v[2]).." "..v[1], width/4 + lineheight + screenx, texty ,350)
+                    love.graphics.printf(v[2], width/2 + 4 * lineheight + screenx, texty ,300)
                 else
                     love.graphics.setColor(0.1, 1.0, 0.1) 
-                    love.graphics.printf(i..": "..getRank(v[2]).." "..v[1], width/4 + lineheight, texty ,350)
-                    love.graphics.printf(v[2], width/2 + 4 * lineheight, texty ,300)
+                    love.graphics.printf(i..": "..getRank(v[2]).." "..v[1], width/4 + lineheight + screenx, texty ,350)
+                    love.graphics.printf(v[2], width/2 + 4 * lineheight + screenx, texty ,300)
                 end
                 texty = texty + lineheight
             else
@@ -143,9 +152,13 @@ function highscore.keypressed(key)
 end
 
 function highscore.mousepressed( x, y, button, istouch )
---    if highscorestate == "highscores" then
---        love.load()
---    end
+    if x > 3*width/4 - width/16 + screenx and x < 3*width/4 + screenx and y > height/8 and y < height/8 + 2*lineheight then
+        love.load()
+    end
+    if x > width/4 + screenx and x < 3*width/4 + screenx and y > 7*height/8 - lineheight * 2.5 and y < 7*height/8 then
+        print("Go to app store")
+        love.system.openURL("https://apps.apple.com/us/app/submarine-sonar-multiplayer/id1524164487")
+    end
 end
 
 local touches = {}
@@ -153,7 +166,7 @@ local startscroll = 0
 
 function highscore.touchpressed(id, x, y)
     if highscorestate == "highscores" then
-        if x > width/4 + 2 and x < width/4 + 2 + width/2 - 4 and y > height/4 + lineheight * 2 + 10 and y < height/4 + lineheight * 2 + 10 + 12*lineheight - 2 then
+        if x > width/4 + 2 + screenx and x < width/4 + 2 + width/2 - 4 + screenx and y > height/8 + lineheight * 2 + 10 and y < height/8 + lineheight * 2 + 10 + 12*lineheight - 2 then
             touches[id] = {x, y, 0, 0}
             startscroll = highscorescroll
         end
