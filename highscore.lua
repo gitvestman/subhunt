@@ -47,15 +47,14 @@ function highscore.update(dt)
             love.load()
         end
         if love.keyboard.isDown("up", "w") then
-             highscorescroll = highscorescroll + 1
+             highscorescroll = highscorescroll + 3
         end
         if love.keyboard.isDown("down", "s") then
-             highscorescroll = highscorescroll - 1
+             highscorescroll = highscorescroll - 3
         end
         if (math.abs(highscorescrollspeed) > 0.1) then
             highscorescroll = highscorescroll + highscorescrollspeed
             highscorescrollspeed = highscorescrollspeed * 0.9
-            print("update highscorescrollspeed "..highscorescrollspeed)
         end
         return true
     end
@@ -108,10 +107,12 @@ function highscore.draw()
         if (texty > height/8 + lineheight*2 + 10) then
             texty = height/8 + lineheight*2 + 10
             highscorescrollspeed = 0
+            highscorescroll = 0
         end
         if (texty < height/8 - lineheight*88 + 10) then
             texty = height/8 - lineheight*88 + 10
             highscorescrollspeed = 0
+            highscorescroll = lineheight*86
         end
         for i,v in ipairs(HighScores) do 
             if i < 100 then
@@ -119,11 +120,11 @@ function highscore.draw()
                     local pulse = math.sin(time*18)/4 + 0.75
                     love.graphics.setColor(0.3, 1.0 * pulse, 0.3) 
                     love.graphics.printf(i..": "..getRank(v[2]).." "..v[1], width/4 + lineheight + screenx, texty ,350)
-                    love.graphics.printf(v[2], width/2 + 4 * lineheight + screenx, texty ,300)
+                    love.graphics.printf(v[2], 3*width/4 - 5 * lineheight + screenx, texty , 4 * lineheight, 'right')
                 else
                     love.graphics.setColor(0.1, 1.0, 0.1) 
                     love.graphics.printf(i..": "..getRank(v[2]).." "..v[1], width/4 + lineheight + screenx, texty ,350)
-                    love.graphics.printf(v[2], width/2 + 4 * lineheight + screenx, texty ,300)
+                    love.graphics.printf(v[2], 3*width/4 - 5 * lineheight + screenx, texty , 4 * lineheight, 'right')
                 end
                 texty = texty + lineheight
             else
@@ -174,7 +175,10 @@ local startscroll = 0
 
 function highscore.touchpressed(id, x, y)
     if highscorestate == "highscores" then
-        if x > width/4 + 2 + screenx and x < width/4 + 2 + width/2 - 4 + screenx and y > height/8 + lineheight * 2 + 10 and y < height/8 + lineheight * 2 + 10 + 12*lineheight - 2 then
+        if x > width/4 + 2 + screenx and 
+            x < width/4 + 2 + width/2 - 4 + screenx and 
+            y > height/8 + lineheight * 2 + 10 and 
+            y < height/8 + lineheight * 2 + 10 + 3*height/4 - lineheight * 5 - 12 then
             touches[id] = {x, y, 0, 0}
             startscroll = highscorescroll
             highscorescrollspeed = 0
