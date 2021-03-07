@@ -78,6 +78,14 @@ function drawControlPanel()
     love.graphics.setLineWidth(2)
     love.graphics.circle("line", displayCenterX, displayCenterY, displayRadius)
     love.graphics.setLineWidth(1)
+    if showMap then
+        love.graphics.setColor(0.05, 0.15, 0.05) 
+        love.graphics.rectangle("fill", 10 + screenx, height - 5 * lineheight, 2.5*width/20, lineheight * 4)
+        love.graphics.setColor(0.1, 1.0, 0.1) 
+        love.graphics.rectangle("line", 10 + screenx, height - 5 * lineheight, 2.5*width/20, lineheight * 4)
+        love.graphics.setFont(mainFont)
+        love.graphics.printf("Ad\nConsent", 10 + 0.5*lineheight + screenx, height - 4.5 * lineheight, 2*width/20, "center")
+    end
 end
 
 function drawSpeed(speed)

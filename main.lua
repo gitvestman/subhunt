@@ -2,7 +2,13 @@ require "controlpanel"
 require "highscore"
 require "multiplayer"
 
-function love.load()
+function love.load(args)
+    screenx, screeny, width, height = love.window.getSafeArea( )
+    love.window.setMode(width, height, {centered = true, highdpi = true})
+    start(0)
+end
+
+function start(rc)
     -- multiplayerAvailable = multiplayer.ping()
     -- player = {x = 0, y = 0, 
     --         speed = 10, thrust = 10, heading = 0, rudder = 0, 
@@ -10,10 +16,17 @@ function love.load()
     -- multiplayer.join()
     -- multiplayer.update()
     -- love.event.quit()
+    runcount = rc
+    --if (#args >= 1) then
+    --    runcount = args[1]
+    --end
+    print("runcount: "..runcount)
+
     love.math.setRandomSeed(1337)
     -- width = love.graphics.getWidth()
     -- height = love.graphics.getHeight()
     screenx, screeny, width, height = love.window.getSafeArea( )
+    --love.window.setMode(width, height, {centered = true, highdpi = true})
     love.graphics.newCanvas()
     size = math.min(height, 0.60*width)
     mainFont = love.graphics.newFont(math.floor(size/22))
@@ -192,6 +205,7 @@ function love.touchreleased(id, x, y)
 end
 
 function GameOver()
+    print("GameOver")
     CheckHighScore()
 end
 
@@ -273,8 +287,10 @@ function drawMap()
     local mapY = height/2 - mapHeight/2 + screeny
     love.graphics.setColor(0.05, 0.15, 0.05) 
     love.graphics.rectangle("fill", mapX, mapY - 2 * lineheight, mapWidth, mapHeight + 4.5 * lineheight)
+    --love.graphics.rectangle("fill", mapX + mapWidth, mapY - 2 * lineheight, width/20, 3 * lineheight)
     love.graphics.setColor(0.1, 1.0, 0.1) 
     love.graphics.rectangle("line", mapX, mapY - 2 * lineheight, mapWidth, mapHeight + 4.5 * lineheight)
+    --love.graphics.rectangle("line", mapX + mapWidth, mapY - 2 * lineheight, width/20, 3 * lineheight)
     if (getRank(score) ~= currentRank) then
         love.graphics.setFont(mainFont)
         love.graphics.printf("Well done!\n\nYou have been promoted to "..getRank(score), mapX + lineheight, height/2 - 4*lineheight, mapWidth - 2*lineheight, "center")
@@ -424,27 +440,27 @@ end
 function handleTouch(x, y, dt)
     rudderhalfwidth = 4*width/40
     rudderx = player.rudder*6*height/40
-    if pointInRange(x, y, 14*width/40 - lineheight + screenx, 5*height/6 + lineheight, 3.5*lineheight + rudderhalfwidth - rudderx, 1) then
-        player.rudder = player.rudder + dt * 0.4
-        if (player.rudder > 1) then 
-            player.rudder = 1
+    if pointInRange(x, y, 13*width/40 - lineheight + screenx, 5*height/6 + lineheight, 4.5*lineheight + rudderhalfwidth - rudderx, 1) then
+        player.rudder = player.rudder + dt * 0.8
+        if (player.rudder > 1.1) then 
+            player.rudder = 1.1
         end
     end
-    if pointInRange(x, y, width/2 - rudderx + screenx, 5*height/6 + lineheight, 4*lineheight + rudderhalfwidth + rudderx, 1) then
-        player.rudder = player.rudder - dt * 0.4
-        if (player.rudder < -1) then 
-            player.rudder = -1
+    if pointInRange(x, y, width/2 - rudderx + screenx, 5*height/6 + lineheight, 5*lineheight + rudderhalfwidth + rudderx, 1) then
+        player.rudder = player.rudder - dt * 0.8
+        if (player.rudder < -1.1) then 
+            player.rudder = -1.1
         end
     end
     if pointInRange(x, y, 34.5*width/40+4 + screenx, height/6 + lineheight, 6*lineheight, 3) and player.thrust < 20 then
-        player.thrust = player.thrust + dt * 3
+        player.thrust = player.thrust + dt * 5
         fullstop = false
         if (player.thrust > 20) then 
             player.thrust = 20
         end
     end
     if pointInRange(x, y, 34.5*width/40+4 + screenx, 4*height/6 - 0.5*lineheight, 6*lineheight, 3) and (player.thrust > 0 or fullstop) then
-        player.thrust = player.thrust - dt * 3
+        player.thrust = player.thrust - dt * 5
         if not fullstop and player.thrust < 0 then 
             player.thrust = 0
         end
@@ -452,6 +468,9 @@ function handleTouch(x, y, dt)
             player.thrust = -20
         end
     end
+    --if pointInRange(x, y, 5 + screenx, lineheight - 5, 1.5*width/20 + 10, lineheight * 3 + 10) then
+    --    love.ads.changeEUConsent()
+    --end
     if not pointInRange(x, y, 38*width/40+4 + screenx, 4*height/6 - 0.5*lineheight, 2*lineheight, 3) and player.thrust == 0 then
         fullstop = true
     end
@@ -504,12 +523,14 @@ function checkKeyboard(dt)
 end
 
 function pointInRange(x, y, targetx, targety, width, height) 
-    return (x-targetx < width + lineheight/2 and x-targetx > -lineheight/2 and y - targety < (1 + height)*lineheight and y - targety > -lineheight/2)
+    return (x-targetx < width + lineheight/2 and x-targetx > -lineheight/2 and y - targety < (1 + height)*lineheight and y - targety > -lineheight)
 end
 
 function love.mousepressed( x, y, button, istouch )
     if showMap and time > 0.2 then
-        if (level == 0) then 
+        if pointInRange(x, y, 5 + screenx, height - 5 * lineheight - 5, 2.5*width/20 + 10, lineheight * 4 + 10) then
+            love.ads.changeEUConsent()
+        elseif (level == 0) then 
             level = 1
             time = 0
         elseif getRank(score) ~= currentRank then

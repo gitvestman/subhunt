@@ -38,13 +38,18 @@ function highscore.update(dt)
         table.insert(HighScores, {playername, score})
         table.sort(HighScores, scoresort)
         highscorestate = "highscores"
+        --print("highscore.update:"..highscorestate);
+        if runcount % 2 == 1 then 
+            loadInterstitial()
+        end
         restarttime = time
         sendHighScore(playername, score)
         getHighScores()
         return true
     elseif highscorestate == "highscores" then
         if (time - restarttime > 15.0) then            
-            love.load()
+            highscorestate = "restart"
+            --print("Timeout restart")
         end
         if love.keyboard.isDown("up", "w") then
              highscorescroll = highscorescroll + 3
@@ -59,7 +64,14 @@ function highscore.update(dt)
         return true
     end
     if (highscorestate == "restart") then
-        love.load()
+        --print("highscore.update:"..highscorestate);
+        if love.ads.isInterstitialLoaded() then
+            highscorestate = "ads"
+            love.ads.showInterstitial()
+            --print("[ADS] Called callback love.showInterstitial.");
+        else
+            start(runcount + 1)
+        end
     end
     return false
 end
@@ -152,7 +164,7 @@ function highscore.keypressed(key)
     end
     if highscorestate == "highscores" then
         if key == "space" or key == "return" then
-            love.load()
+            start(runcount + 1)
         end
     end
     return false
@@ -162,6 +174,7 @@ function highscore.mousepressed( x, y, button, istouch )
     if highscorestate == "highscores" then
         if x > 3*width/4 - width/16 + screenx and x < 3*width/4 + screenx and y > height/8 and y < height/8 + 2*lineheight then
             highscorestate = "restart"
+            print("Close window restart")
         end
         if x > width/4 + screenx and x < 3*width/4 + screenx and y > 7*height/8 - lineheight * 2.5 and y < 7*height/8 then
             print("Go to app store")
@@ -197,26 +210,51 @@ function highscore.touchreleased(id, x, y)
     if touches[id] ~= nil then
         highscorescroll = startscroll + (touches[id][2] - y)
         if math.abs(highscorescroll) < 1 then
-            love.load()
+            highscorestate = "restart"
         end
     end
     touches[id] = nil
 end
 
 function CheckHighScore()
+    --print("CheckHighScore:"..highscorestate);
     if (highscorestate ~= "none" or offline) then
-        love.load()
-        --return
-    end
-    if score > 0 and (#HighScores < 75 or score > HighScores[75][2]) then
+        --print("CheckHighScores none love.load()")
+        -- love.load({runcount + 1})
+        return
+    elseif score > 0 and (#HighScores < 75 or score > HighScores[75][2]) then
+        --print("CheckHighScores textInput")
         highscorestate = "input"
         love.keyboard.setTextInput( true )
     elseif (#HighScores) > 1 then
+        --print("CheckHighScores loadInterstitial")
         highscorestate = "highscores"
         restarttime = time
+        if runcount % 2 == 1 then
+            loadInterstitial()
+        end
     else
-        love.load()
+        --print("CheckHighScores love.load()")
+        start(runcount + 1)
     end
+end
+
+function loadInterstitial()
+	love.ads.requestInterstitial("ca-app-pub-1463367787440282/2058451810");
+	print("[ADS] Called callback love.requestInterstitial.");
+
+	--	local r = love.ads.isInterstitialLoaded();
+	--	love.ads.showInterstitial();
+end
+
+function love.interstitialFailedToLoad()
+	print("[ADS] Called callback love.interstitialFailedToLoad.");
+    start(runcount + 1)
+end
+
+function love.interstitialClosed()
+	print("[ADS] Called callback love.interstitialClosed.");
+    start(runcount + 1)
 end
 
 function sendHighScore(playername, score)
