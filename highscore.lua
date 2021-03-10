@@ -39,9 +39,10 @@ function highscore.update(dt)
         table.sort(HighScores, scoresort)
         highscorestate = "highscores"
         --print("highscore.update:"..highscorestate);
-        if runcount % 2 == 1 then 
-            loadInterstitial()
-        end
+        love.ads.showBanner()
+        --if runcount % 3 == 1 then 
+        --    loadInterstitial()
+        --end
         restarttime = time
         sendHighScore(playername, score)
         getHighScores()
@@ -77,11 +78,12 @@ function highscore.update(dt)
 end
 
 local function highscoreStencilFunction()
-   love.graphics.rectangle("fill", width/4 + 2 + screenx , height/8 + lineheight * 2 + 10, width/2 - 4, 3*height/4 - lineheight * 5 - 12)
+   love.graphics.rectangle("fill", width/4 + 2 + screenx , height/8 + lineheight * 1 + 10, width/2 - 4, 3*height/4 - lineheight * 5 - 12)
 end
 
 
 function highscore.draw()
+    love.graphics.setFont(smallFont)
     if (#HighScores) > 1 then
         love.graphics.print("Top Dog:", 10 + screenx, 10, 0, 1)
         love.graphics.print(getRank(HighScores[1][2]).." "..HighScores[1][1]..": "..HighScores[1][2], 10 + screenx, lineheight + 15, 0, 1)
@@ -93,10 +95,10 @@ function highscore.draw()
         textbox:draw(getRank(score))
     elseif highscorestate == "highscores" then
         love.graphics.setColor(0.05, 0.1, 0.05, 0.9) 
-        love.graphics.rectangle("fill", width/4 + screenx , height/8, width/2, 3*height/4) 
+        love.graphics.rectangle("fill", width/4 + screenx , height/8 - lineheight, width/2, 3*height/4) 
         love.graphics.setColor(0.1, 1.0, 0.1) 
-        love.graphics.rectangle("line", width/4 + screenx , height/8, width/2, 3*height/4) 
-        texty = height/8 + lineheight
+        love.graphics.rectangle("line", width/4 + screenx , height/8 - lineheight, width/2, 3*height/4) 
+        texty = height/8
         love.graphics.setFont(mainFont)
         love.graphics.printf("Hall of fame", width/4 + lineheight + screenx, texty - 2 ,300)
         love.graphics.setColor(0.1, 0.3, 0.1) 
@@ -116,8 +118,8 @@ function highscore.draw()
             texty = texty - (playerRank - 11) * lineheight
         end
         texty = texty - highscorescroll
-        if (texty > height/8 + lineheight*2 + 10) then
-            texty = height/8 + lineheight*2 + 10
+        if (texty > height/8 + lineheight + 10) then
+            texty = height/8 + lineheight + 10
             highscorescrollspeed = 0
             highscorescroll = 0
         end
@@ -190,8 +192,8 @@ function highscore.touchpressed(id, x, y)
     if highscorestate == "highscores" then
         if x > width/4 + 2 + screenx and 
             x < width/4 + 2 + width/2 - 4 + screenx and 
-            y > height/8 + lineheight * 2 + 10 and 
-            y < height/8 + lineheight * 2 + 10 + 3*height/4 - lineheight * 5 - 12 then
+            y > height/8 + lineheight * 1 + 10 and 
+            y < height/8 + lineheight * 1 + 10 + 3*height/4 - lineheight * 6 - 12 then
             touches[id] = {x, y, 0, 0}
             startscroll = highscorescroll
             highscorescrollspeed = 0
@@ -230,7 +232,8 @@ function CheckHighScore()
         --print("CheckHighScores loadInterstitial")
         highscorestate = "highscores"
         restarttime = time
-        if runcount % 2 == 1 then
+        love.ads.showBanner()
+        if runcount % 4 == 3 then
             loadInterstitial()
         end
     else
@@ -240,7 +243,7 @@ function CheckHighScore()
 end
 
 function loadInterstitial()
-	love.ads.requestInterstitial("ca-app-pub-1463367787440282/2058451810");
+	love.ads.requestInterstitial("ca-app-pub-1463367787440282/3191639891");
 	print("[ADS] Called callback love.requestInterstitial.");
 
 	--	local r = love.ads.isInterstitialLoaded();

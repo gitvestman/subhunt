@@ -5,6 +5,7 @@ require "multiplayer"
 function love.load(args)
     screenx, screeny, width, height = love.window.getSafeArea( )
     love.window.setMode(width, height, {centered = true, highdpi = true})
+    love.ads.createBanner("ca-app-pub-1463367787440282/2058451810","bottom")
     start(0)
 end
 
@@ -23,6 +24,7 @@ function start(rc)
     print("runcount: "..runcount)
 
     love.math.setRandomSeed(1337)
+    print("love.math.getRandomState() "..love.math.getRandomState())
     -- width = love.graphics.getWidth()
     -- height = love.graphics.getHeight()
     screenx, screeny, width, height = love.window.getSafeArea( )
@@ -50,7 +52,7 @@ function start(rc)
             torpedoloading = 0, type = "player" }
     enemies = {{x = love.math.random() * 1500 - 750, y = love.math.random() * 500 + 1200, 
             speed = 10, thrust = 10, heading = 240, rudder = 0, dead = false, strategy = 4, 
-            torpedoloading = 15, time = time, type = "enemy"}}
+            torpedoloading = 12, time = time, type = "enemy"}}
     torpedos = {}
     finalCountdown = 0
     explosions = {}
@@ -58,15 +60,18 @@ function start(rc)
     sonar = {active = false, time = time}
     -- sonarSound:play()
     map = love.graphics.newImage("World.png")
-    targets = {{name = "Baltic Sea", x = 645, y = 130},
-        {name = "South China Sea", x = 1030, y = 330},
-        {name = "North Sea", x = 580, y = 110},
-        {name = "Persian Gulf", x = 730, y = 300},
-        {name = "Sulu Sea", x = 1060, y = 360},
-        {name = "Gulf of Mexico", x = 240, y = 280}}
+    targets = {{name = "Baltic Sea", x = 645, y = 130, "0x9c24a0b438492506"},
+        {name = "South China Sea", x = 1030, y = 330, "0x6c9f99eb1e864ca3"},
+        {name = "North Sea", x = 580, y = 110, "0xbf57a5d0ad1f99fc"},
+        {name = "Persian Gulf", x = 730, y = 300, "0xd8ed80572fb83a9a"},
+        {name = "Sulu Sea", x = 1060, y = 360, "0x64524eb0d2d1aec5"},
+        {name = "Gulf of Mexico", x = 240, y = 280, "0x0fb96da297d6b1db"},
+        {name = "Baffin Bay", x = 420, y = 110, "0x6a7ff1d684e8228a"},
+        {name = "Gulf of Alaska", x = 120, y = 150, "0xf3e60e95f41a89cd"}}
     showMap = true
+    practice = 0
     enemyTorpedo = false
-
+    love.ads.showBanner()
     highscore.load()
 
     love.keyboard.setKeyRepeat(false)
@@ -88,11 +93,13 @@ end
 function newLevel()
     level = level + 1
     print("newLevel: "..level)
+    print("love.math.getRandomState() "..love.math.getRandomState())
     player = {x = 0, y = 0, 
             speed = 10, thrust = 10, heading = 0, rudder = 0, 
             torpedoloading = 0, type = "player" }
     player.lastKnown = {x = player.x, y = player.y, speed = player.speed, heading = player.heading, time=time}
     showMap = true
+    love.ads.showBanner()
     kills = 0
     spawnNewEnemy()
 end
@@ -173,6 +180,7 @@ function love.keypressed(key)
             currentRank = getRank(score)
         else
             showMap = false;
+            love.ads.hideBanner()
         end
         return
     end
@@ -210,6 +218,7 @@ function GameOver()
 end
 
 function spawnNewEnemy()
+    print("spawnNewEnemy")
     angle = love.math.random() * (90 * #enemies + level * 10) - 45 * #enemies + player.heading
     enemy = {x = player.x + math.sin(math.rad(angle)) * (1200 + #enemies*150), 
              y = player.y + math.cos(math.rad(angle)) * (1200 + #enemies*150), 
@@ -243,6 +252,15 @@ function enemyAi(dt, enemy, player)
         fireTorpedo(enemy)
     end
 
+    if (enemydistance > 2600) then 
+        enemy.dead = true
+        spawnNewEnemy()
+        print("Enemy too far away")
+        return
+    end
+    if (enemydistance > 1300) then 
+        enemy.strategy = 0 -- Speed fight
+    end
     if bit.band(enemy.strategy, 0x01) and enemydistance < 1300 then -- stealth
         if (enemy.thrust > 5) then
             enemy.thrust = enemy.thrust - dt/2
@@ -252,7 +270,8 @@ function enemyAi(dt, enemy, player)
             enemy.thrust = enemy.thrust + dt/2
         end
     end
-    if bit.band(enemy.strategy, 0x02) and enemydistance < 1300 and enemydistance > 300 and math.abs(differential) < enemyhitangle + 30  then -- flee
+    if bit.band(enemy.strategy, 0x02) and enemydistance < 1300 and 
+        enemydistance > 300 and math.abs(differential) < enemyhitangle + 30  then -- flee
         if (differential > 0) then 
             enemy.rudder = 1
         else
@@ -284,7 +303,7 @@ function drawMap()
     local mapHeight = map:getHeight()*scale
     local mapWidth = map:getWidth()*scale + 4
     local mapX = width/2 - mapWidth/2 + screenx - 2
-    local mapY = height/2 - mapHeight/2 + screeny
+    local mapY = height/2 - mapHeight/2 + screeny - lineheight * 2.1
     love.graphics.setColor(0.05, 0.15, 0.05) 
     love.graphics.rectangle("fill", mapX, mapY - 2 * lineheight, mapWidth, mapHeight + 4.5 * lineheight)
     --love.graphics.rectangle("fill", mapX + mapWidth, mapY - 2 * lineheight, width/20, 3 * lineheight)
@@ -314,6 +333,19 @@ function drawMap()
         love.graphics.ellipse("line", mapX + 4*lineheight, ypos, height/40, height/40/1.5, height/60)
         love.graphics.ellipse("line", mapX + 6*lineheight + xpos, ypos, height/40, height/40/1.5)
         dashLine({x=mapX + 4*lineheight, y=ypos}, {x=mapX + 6*lineheight + xpos, y=ypos}, 10, 10)
+
+        --love.graphics.setColor(0.1, 1.0, 0.1) 
+        --love.graphics.rectangle("line", mapX + mapWidth/2 - mapWidth/5 - lineheight, mapY + mapHeight - 1 * lineheight, mapWidth/5, 2 * lineheight)
+        --love.graphics.printf("Campaign", mapX + mapWidth/2 - mapWidth/5 - lineheight, mapY + mapHeight - 0.5 * lineheight, mapWidth/5, "center")
+
+        --love.graphics.setColor(0.1, 1.0, 0.1) 
+        --love.graphics.rectangle("line", mapX + mapWidth/2, mapY + mapHeight - 1 * lineheight, mapWidth/5, 2 * lineheight)
+        --love.graphics.printf("Practice", mapX + mapWidth/2, mapY + mapHeight - 0.5 * lineheight, mapWidth/5, "center")
+
+        --love.graphics.setColor(0.1, 1.0, 0.1) 
+        --love.graphics.rectangle("line", mapX + mapWidth/2 + mapWidth/5 + lineheight, mapY + mapHeight - 1 * lineheight, mapWidth/5, 2 * lineheight)
+        --love.graphics.printf("Multiplayer", mapX + mapWidth/2 + mapWidth/5 + lineheight, mapY + mapHeight - 0.5 * lineheight, mapWidth/5, "center")
+
         return
     end
     love.graphics.draw(map, mapX + 2, mapY + lineheight, 0, scale)
@@ -334,7 +366,7 @@ function drawMap()
     love.graphics.line(posx, posy-10*pulse, posx, posy-18*pulse-10)
     love.graphics.setLineWidth(1)
     love.graphics.setColor(0.1, 1.0, 0.1) 
-    love.graphics.printf("Click to start", 3*width/8 + screenx, height/2 + mapHeight/2 + lineheight + screeny, 2*width/8, "center")
+    love.graphics.printf("Click to start", 3*width/8 + screenx, height/2 + mapHeight/2 - lineheight + screeny, 2*width/8, "center")
 end
 
 -- gradient_shader = love.graphics.newShader([[
@@ -440,7 +472,7 @@ end
 function handleTouch(x, y, dt)
     rudderhalfwidth = 4*width/40
     rudderx = player.rudder*6*height/40
-    if pointInRange(x, y, 13*width/40 - lineheight + screenx, 5*height/6 + lineheight, 4.5*lineheight + rudderhalfwidth - rudderx, 1) then
+    if pointInRange(x, y, 12*width/40 - lineheight + screenx, 5*height/6 + lineheight, 5.5*lineheight + rudderhalfwidth - rudderx, 1) then
         player.rudder = player.rudder + dt * 0.8
         if (player.rudder > 1.1) then 
             player.rudder = 1.1
@@ -528,7 +560,7 @@ end
 
 function love.mousepressed( x, y, button, istouch )
     if showMap and time > 0.2 then
-        if pointInRange(x, y, 5 + screenx, height - 5 * lineheight - 5, 2.5*width/20 + 10, lineheight * 4 + 10) then
+        if pointInRange(x, y, 5 + screenx, height - 5 * lineheight - 5, 3*width/20 + 10, lineheight * 4 + 10) then
             love.ads.changeEUConsent()
         elseif (level == 0) then 
             level = 1
@@ -537,6 +569,7 @@ function love.mousepressed( x, y, button, istouch )
             currentRank = getRank(score)
         else
             showMap = false;
+            love.ads.hideBanner()
         end
         return
     end
