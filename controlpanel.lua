@@ -258,7 +258,7 @@ function drawTorpedos()
     for i=#torpedos,1,-1 do
         --print("Torpedo:"..submarine.type..": "..tostring(torpedo.x)..":"..tostring(torpedo.speed))
         local torpedo = torpedos[i]
-        if (time - torpedo.time > 10) then
+        if (time - torpedo.time > 15) then -- Torpedo time to live
             table.remove(torpedos, i)
         else
             calcx = torpedo.x + math.sin(math.rad(torpedo.heading)) * torpedo.speed * (time - torpedo.time) * 5
@@ -266,13 +266,29 @@ function drawTorpedos()
             local dx = calcx - player.x
             local dy = calcy - player.y
             if dx^2 + dy^2 < 3600 and torpedo.source ~= player then
-                targetHit(player, calcx, calcy, i)
+                targetHit(torpedo, player, player.x, player.y, i)
             else 
-                for i, target in ipairs(enemies) do                
+                for j, target in ipairs(enemies) do                
                     local dx = calcx - target.x
                     local dy = calcy - target.y
                     if dx^2 + dy^2 < 3600 and torpedo.source ~= target then
-                        targetHit(target, calcx, calcy, i)
+                        targetHit(torpedo, target, target.x, target.y, i)
+                    end
+                end
+            end
+            for j=#torpedos,1,-1 do
+                if j ~= i then
+                    local torpedob = torpedos[j]
+                    calcbx = torpedob.x + math.sin(math.rad(torpedob.heading)) * torpedob.speed * (time - torpedob.time) * 5
+                    calcby = torpedob.y + math.cos(math.rad(torpedob.heading)) * torpedob.speed * (time - torpedob.time) * 5
+                    local dx = calcx - calcbx
+                    local dy = calcy - calcby
+                    if dx^2 + dy^2 < 800 then    
+                        torpedo.speed = 0
+                        torpedob.speed = 0
+                        torpedo.time = 99
+                        torpedob.time = 99
+                        createExplosion(calcx, calcy)
                     end
                 end
             end
@@ -291,15 +307,21 @@ function drawTorpedos()
     return enemyTorpedo
 end
 
-function targetHit(target, x, y, i)
-    --print("Torpedo:"..torpedo.source.type..", Target:"..target.type..": "..tostring(torpedo.x)..":"..tostring(torpedo.speed))
+function targetHit(torpedo, target, x, y, i)
+    for j=1,#torpedos do
+        print("Torpedo:"..tostring(j)..":"..torpedos[j].source.type)
+    end
+    print("Torpedo:"..torpedo.source.type..", Target:"..target.type..": "..#torpedos..";"..tostring(i))
     table.remove(torpedos, i)
+    for j=1,#torpedos do
+        print("Torpedo:"..tostring(j)..":"..torpedos[j].source.type)
+    end
     torpedo.speed = 0
     createExplosion(x, y)
     target.dead = true
     finalCountdown = 5
     if (target.type == "enemy") then
-        score = score + 50 + 10*level + math.ceil(5 * math.max(30 - time - target.time, 0))
+        score = score + 50 + 10*level + math.ceil(5 * math.max(30 + level - time - target.time, 0))
         kills = kills + 1
         target.lastKnown = nil
     end

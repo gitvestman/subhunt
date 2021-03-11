@@ -5,9 +5,13 @@ require "multiplayer"
 function love.load(args)
     screenx, screeny, width, height = love.window.getSafeArea( )
     love.window.setMode(width, height, {centered = true, highdpi = true})
-    love.ads.createBanner("ca-app-pub-1463367787440282/2058451810","bottom")
+    if love.ads then
+        love.ads.createBanner("ca-app-pub-1463367787440282/2058451810","bottom")
+    end
     start(0)
 end
+
+
 
 function start(rc)
     -- multiplayerAvailable = multiplayer.ping()
@@ -71,7 +75,9 @@ function start(rc)
     showMap = true
     practice = 0
     enemyTorpedo = false
-    love.ads.showBanner()
+    if love.ads then
+        love.ads.showBanner()
+    end
     highscore.load()
 
     love.keyboard.setKeyRepeat(false)
@@ -99,8 +105,11 @@ function newLevel()
             torpedoloading = 0, type = "player" }
     player.lastKnown = {x = player.x, y = player.y, speed = player.speed, heading = player.heading, time=time}
     showMap = true
-    love.ads.showBanner()
+    if love.ads then
+        love.ads.showBanner()
+    end
     kills = 0
+    torpedos = {}
     spawnNewEnemy()
 end
 
@@ -180,7 +189,9 @@ function love.keypressed(key)
             currentRank = getRank(score)
         else
             showMap = false;
-            love.ads.hideBanner()
+            if love.ads then
+                love.ads.hideBanner()
+            end
         end
         return
     end
@@ -255,7 +266,7 @@ function enemyAi(dt, enemy, player)
     if (enemydistance > 2600) then 
         enemy.dead = true
         spawnNewEnemy()
-        print("Enemy too far away")
+        --print("Enemy too far away")
         return
     end
     if (enemydistance > 1300) then 
@@ -561,7 +572,9 @@ end
 function love.mousepressed( x, y, button, istouch )
     if showMap and time > 0.2 then
         if pointInRange(x, y, 5 + screenx, height - 5 * lineheight - 5, 3*width/20 + 10, lineheight * 4 + 10) then
-            love.ads.changeEUConsent()
+            if love.ads then
+                love.ads.changeEUConsent()
+            end
         elseif (level == 0) then 
             level = 1
             time = 0
@@ -569,7 +582,9 @@ function love.mousepressed( x, y, button, istouch )
             currentRank = getRank(score)
         else
             showMap = false;
-            love.ads.hideBanner()
+            if love.ads then
+                love.ads.hideBanner()
+            end
         end
         return
     end

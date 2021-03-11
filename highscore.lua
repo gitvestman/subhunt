@@ -39,7 +39,9 @@ function highscore.update(dt)
         table.sort(HighScores, scoresort)
         highscorestate = "highscores"
         --print("highscore.update:"..highscorestate);
-        love.ads.showBanner()
+        if love.ads then
+           love.ads.showBanner()
+        end
         --if runcount % 3 == 1 then 
         --    loadInterstitial()
         --end
@@ -66,7 +68,7 @@ function highscore.update(dt)
     end
     if (highscorestate == "restart") then
         --print("highscore.update:"..highscorestate);
-        if love.ads.isInterstitialLoaded() then
+        if love.ads and love.ads.isInterstitialLoaded() then
             highscorestate = "ads"
             love.ads.showInterstitial()
             --print("[ADS] Called callback love.showInterstitial.");
@@ -150,7 +152,7 @@ function highscore.draw()
 end
 
 function getRank(score)
-    return ranks[math.min(math.floor((score^0.8)/80) + 1, #ranks)]
+    return ranks[math.min(math.floor((score^0.79)/80) + 1, #ranks)]
 end
 
 function love.textinput(text)
@@ -224,7 +226,7 @@ function CheckHighScore()
         --print("CheckHighScores none love.load()")
         -- love.load({runcount + 1})
         return
-    elseif score > 0 and (#HighScores < 75 or score > HighScores[75][2]) then
+    elseif score > 0 and (#HighScores < 95 or score > HighScores[95][2]) then
         --print("CheckHighScores textInput")
         highscorestate = "input"
         love.keyboard.setTextInput( true )
@@ -232,9 +234,11 @@ function CheckHighScore()
         --print("CheckHighScores loadInterstitial")
         highscorestate = "highscores"
         restarttime = time
-        love.ads.showBanner()
-        if runcount % 4 == 3 then
-            loadInterstitial()
+        if love.ads then
+            love.ads.showBanner()
+            if runcount % 4 == 3 then
+                loadInterstitial()
+            end
         end
     else
         --print("CheckHighScores love.load()")
