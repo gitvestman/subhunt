@@ -236,7 +236,7 @@ function CheckHighScore()
         restarttime = time
         if love.ads then
             love.ads.showBanner()
-            if runcount % 4 == 3 then
+            if runcount % 3 == 2 then
                 loadInterstitial()
             end
         end
@@ -249,9 +249,6 @@ end
 function loadInterstitial()
 	love.ads.requestInterstitial("ca-app-pub-1463367787440282/3191639891");
 	print("[ADS] Called callback love.requestInterstitial.");
-
-	--	local r = love.ads.isInterstitialLoaded();
-	--	love.ads.showInterstitial();
 end
 
 function love.interstitialFailedToLoad()

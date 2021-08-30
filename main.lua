@@ -75,7 +75,7 @@ function start(rc)
     showMap = true
     practice = 0
     enemyTorpedo = false
-    if love.ads then
+    if love.ads and runcount > 1 then
         love.ads.showBanner()
     end
     highscore.load()
