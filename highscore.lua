@@ -131,7 +131,7 @@ function highscore.draw()
             highscorescroll = lineheight*86
         end
         for i,v in ipairs(HighScores) do 
-            if i < 100 then
+            if i < 200 then
                 if (i == playerRank) then
                     local pulse = math.sin(time*18)/4 + 0.75
                     love.graphics.setColor(0.3, 1.0 * pulse, 0.3) 
@@ -226,7 +226,7 @@ function CheckHighScore()
         --print("CheckHighScores none love.load()")
         -- love.load({runcount + 1})
         return
-    elseif score > 0 and (#HighScores < 95 or score > HighScores[95][2]) then
+    elseif score > 0 and (#HighScores < 195 or score > HighScores[195][2]) then
         --print("CheckHighScores textInput")
         highscorestate = "input"
         love.keyboard.setTextInput( true )
@@ -263,25 +263,31 @@ end
 
 function sendHighScore(playername, score)
     b, c, h = http.request {
-        url = "http://dreamlo.com/lb/gXMWplliu0GIHCgsPOReXguPQmJEqawkGPmz_TRnAECQ/add/"..playername.."/"..score
+        url = "https://www.dreamlo.com/lb/gXMWplliu0GIHCgsPOReXguPQmJEqawkGPmz_TRnAECQ/add/"..playername.."/"..score
       }
 end
 
 function getHighScores()
     print("getHighScores "..playername)
     http.TIMEOUT = 5
-    b, c, h = http.request("http://dreamlo.com/lb/5d7fe66ed1041303ecaac404/pipe/100")
+    b1, c1, h1 = http.request("https://www.dreamlo.com/lb/5d7fe66ed1041303ecaac404/pipe/100")
 
     HighScores = {}
-    if not (c == 200) then
+    if not (c1 == 200) then
         offline = true
-        print("Error: '"..c.."'")
+        print("Error: '"..c1.."' ")
+        return
+    end
+    b2, c2, h2 = http.request("https://www.dreamlo.com/lb/5d7fe66ed1041303ecaac404/pipe/100/100")
+    if not (c2 == 200) then
+        offline = true
+        print("Error: '"..c1.."'")
         return
     end
     playerRank = -1
     highscorescroll = 0
     highscorescrollspeed = 0
-    lines = string.explode(b, "\n")
+    lines = string.explode(b1..b2, "\n")
     for i,v in pairs(lines) do
         tbl = string.explode(v, "|")
         if (tbl[1] ~= nil and tbl[2] ~= nil) then
