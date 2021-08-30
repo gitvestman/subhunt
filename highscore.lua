@@ -55,10 +55,10 @@ function highscore.update(dt)
             --print("Timeout restart")
         end
         if love.keyboard.isDown("up", "w") then
-             highscorescroll = highscorescroll + 3
+             highscorescroll = highscorescroll + 5
         end
         if love.keyboard.isDown("down", "s") then
-             highscorescroll = highscorescroll - 3
+             highscorescroll = highscorescroll - 5
         end
         if (math.abs(highscorescrollspeed) > 0.1) then
             highscorescroll = highscorescroll + highscorescrollspeed
@@ -125,10 +125,10 @@ function highscore.draw()
             highscorescrollspeed = 0
             highscorescroll = 0
         end
-        if (texty < height/8 - lineheight*88 + 10) then
-            texty = height/8 - lineheight*88 + 10
+        if (texty < height/8 - lineheight*(#HighScores-14) + 10) then
+            texty = height/8 - lineheight*(#HighScores-14) + 10
             highscorescrollspeed = 0
-            highscorescroll = lineheight*86
+            highscorescroll = lineheight*(#HighScores-14) + 10
         end
         for i,v in ipairs(HighScores) do 
             if i < 200 then
