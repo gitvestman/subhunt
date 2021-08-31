@@ -124,11 +124,18 @@ function highscore.draw()
             texty = height/8 + lineheight + 10
             highscorescrollspeed = 0
             highscorescroll = 0
+            if (playerRank > 11) then
+                highscorescroll = highscorescroll - (playerRank - 11) * lineheight
+            end
         end
         if (texty < height/8 - lineheight*(#HighScores-14) + 10) then
+            print("texty >  "..texty.." < "..(height/8 - lineheight*(#HighScores-14) + 10))
             texty = height/8 - lineheight*(#HighScores-14) + 10
             highscorescrollspeed = 0
             highscorescroll = lineheight*(#HighScores-14) + 10
+            if (playerRank > 11) then
+                highscorescroll = highscorescroll - (playerRank - 11) * lineheight
+            end
         end
         for i,v in ipairs(HighScores) do 
             if i < 200 then
@@ -214,7 +221,7 @@ function highscore.touchreleased(id, x, y)
     if touches[id] ~= nil then
         highscorescroll = startscroll + (touches[id][2] - y)
         if math.abs(highscorescroll) < 1 then
-            highscorestate = "restart"
+            -- highscorestate = "restart"
         end
     end
     touches[id] = nil

@@ -496,14 +496,14 @@ function handleTouch(x, y, dt)
         end
     end
     if pointInRange(x, y, 34.5*width/40+4 + screenx, height/6 + lineheight, 6*lineheight, 3) and player.thrust < 20 then
-        player.thrust = player.thrust + dt * 5
+        player.thrust = player.thrust + dt * 10
         fullstop = false
         if (player.thrust > 20) then 
             player.thrust = 20
         end
     end
     if pointInRange(x, y, 34.5*width/40+4 + screenx, 4*height/6 - 0.5*lineheight, 6*lineheight, 3) and (player.thrust > 0 or fullstop) then
-        player.thrust = player.thrust - dt * 5
+        player.thrust = player.thrust - dt * 10
         if not fullstop and player.thrust < 0 then 
             player.thrust = 0
         end
@@ -522,14 +522,14 @@ end
 function checkKeyboard(dt)
 
     if love.keyboard.isDown("up", "w") and player.thrust < 20 then
-        player.thrust = player.thrust + dt * 3
+        player.thrust = player.thrust + dt * 10
         fullstop = false
         if (player.thrust > 20) then 
             player.thrust = 20
         end
     end
     if love.keyboard.isDown('down', 's') and (player.thrust > 0 or fullstop) then
-        player.thrust = player.thrust - dt * 3
+        player.thrust = player.thrust - dt * 10
         if not fullstop and player.thrust < 0 then 
             player.thrust = 0
         end
